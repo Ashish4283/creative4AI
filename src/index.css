@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 18%;
+    --card: 216 33% 97%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+    --primary: 51 100% 50%; /* Yellow */
+    --primary-foreground: 0 0% 18%;
+    --secondary: 0 0% 75%; /* Silver */
+    --secondary-foreground: 0 0% 18%;
+    --muted: 0 0% 88%;
+    --muted-foreground: 215 14% 34%;
+    --accent: 16 100% 50%; /* Orange-Red */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 16% 84%;
+    --input: 220 13% 96%;
+    --ring: 51 100% 50%; /* Yellow */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 4%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 51 100% 50%; /* Yellow */
+    --primary-foreground: 0 0% 18%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 16 100% 50%; /* Orange-Red */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 51 100% 50%; /* Yellow */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom animations and effects */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* New shine effect animation */
+@keyframes shine {
+  from {
+    transform: translateX(-100%) skewX(-25deg);
+  }
+  to {
+    transform: translateX(200%) skewX(-25deg);
+  }
+}
+
+.gradient-bg {
+  background: linear-gradient(-45deg, hsl(var(--primary)), hsl(var(--accent)));
+  background-size: 400% 400%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+.glass-effect {
+  backdrop-filter: blur(16px) saturate(180%);
+  /* Light mode defaults */
+  background-color: hsla(var(--card) / 0.6);
+  border: 1px solid hsl(var(--border));
+}
+
+.dark .glass-effect {
+  background-color: rgba(17, 25, 40, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%); /* Yellow to Orange-Red */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+}
+
+.hero-pattern {
+  background-image: radial-gradient(circle at 25px 25px, hsl(var(--secondary) / 0.2) 2px, transparent 0),
+    radial-gradient(circle at 75px 75px, hsl(var(--secondary) / 0.1) 1px, transparent 0);
+  background-size: 100px 100px;
+}
+
+.card-hover {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px hsl(var(--ring) / 0.2);
+}
+
+/* New shine effect for cards and other elements */
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right,
+      hsl(0 0% 100% / 0) 0%,
+      hsl(0 0% 100% / 0.3) 50%,
+      hsl(0 0% 100% / 0) 100%);
+  transform: translateX(-100%) skewX(-25deg);
+}
+
+.shine-effect:hover::after {
+  animation: shine 1.2s ease-out;
+}
+
+/* New interactive button style */
+.interactive-button {
+  @apply transition-all duration-300 ease-in-out;
+}
+.interactive-button:hover {
+  @apply shadow-lg;
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+.interactive-button:active {
+  transform: translateY(0px) scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.8);
+}
