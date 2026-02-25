@@ -21,10 +21,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Debug Server Code
+      - name: Fix Portfolio Imports
         run: |
-          echo "Checking if PortfolioSection.jsx has placeholders..."
-          # This will now FAIL the build if the new code is missing
+          echo "Removing conflicting image imports..."
+          # Delete lines containing 'img/Portfolio' to remove the bad imports
+          sed -i '/img\/Portfolio/d' src/components/sections/PortfolioSection.jsx
+          # Verify the constants are still there
           grep "const fuzzyMatcherImage" src/components/sections/PortfolioSection.jsx
 
       - name: Clean Vite cache
