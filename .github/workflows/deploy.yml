@@ -24,7 +24,8 @@ jobs:
       - name: Debug Server Code
         run: |
           echo "Checking if PortfolioSection.jsx has placeholders..."
-          grep "const fuzzyMatcherImage" src/components/sections/PortfolioSection.jsx || echo "CRITICAL: Old code detected on server!"
+          # This will now FAIL the build if the new code is missing
+          grep "const fuzzyMatcherImage" src/components/sections/PortfolioSection.jsx
 
       - name: Clean Vite cache
         run: rm -rf node_modules/.vite
