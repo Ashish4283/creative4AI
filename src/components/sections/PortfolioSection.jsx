@@ -2,12 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Camera, Sparkles, Star, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import fuzzyMatcherImage from '../../img/portfolio/Gemini_Fuzzy_Match_Tool.png';
-import webCopilotImage from '../../img/portfolio/AI_Powered_Data_Extraction.png';
-import imageExtractorExtensionImage from '../../img/portfolio/Image_Extraction_Extention.png';
-import imageResequencerImage from '../../img/portfolio/Image_Reorder_Resequencer.png';
-import DashboardingImage from '../../img/portfolio/Dashboarding.png';
-import aiMenuExtractorImage from '../../img/portfolio/AI_Powered_Data_IMG_PDF_to_Text.png';
+import fuzzyMatcherImage from '../../img/Portfolio/Gemini_Fuzzy_Match_Tool.png';
+import webCopilotImage from '../../img/Portfolio/AI_Powered_Data_Extraction.png';
+import imageExtractorExtensionImage from '../../img/Portfolio/Image_Extraction_Extention.png';
+import imageResequencerImage from '../../img/Portfolio/Image_Reorder_Resequencer.png';
+import DashboardingImage from '../../img/Portfolio/Dashboarding.png';
+import aiMenuExtractorImage from '../../img/Portfolio/AI_Powered_Data_IMG_PDF_to_Text.png';
 
 const portfolioProjects = [
   {
