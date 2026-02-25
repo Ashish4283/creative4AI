@@ -37,6 +37,3 @@ coverage/
 *.avi
 *.mkv
 
-# Heavy asset folders (if these are reference/demo only)
-src/img/Portfolio/
-storage/
