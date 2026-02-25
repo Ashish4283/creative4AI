@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Debug Server Code
+        run: |
+          echo "Checking if PortfolioSection.jsx has placeholders..."
+          grep "const fuzzyMatcherImage" src/components/sections/PortfolioSection.jsx || echo "CRITICAL: Old code detected on server!"
+
       - name: Clean Vite cache
         run: rm -rf node_modules/.vite
 
