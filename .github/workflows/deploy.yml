@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clean Vite cache
+        run: rm -rf node_modules/.vite
+
       - name: Build Vite app
         run: npm run build
 
