@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Video, BarChart3, Palette, Brain, Rocket } from 'lucide-react';
-import WorkstationImg from '../../img/Portfolio/workstation.png';
+import WorkstationImg from "../../img/Portfolio/workstation.png";
 import { Button } from '@/components/ui/button';
 
 const services = [
