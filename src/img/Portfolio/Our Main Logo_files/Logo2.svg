@@ -1,0 +1,28 @@
+<svg width="800" height="250" viewBox="0 0 800 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Static gradient -->
+    <linearGradient id="flatNeon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a68ef"/>
+      <stop offset="50%" stop-color="#b569f5"/>
+      <stop offset="100%" stop-color="#ff7a59"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Infinity loop (flat stroke, no glow) -->
+  <path d="M 200 125 C 200 50, 350 50, 400 125 C 450 200, 600 200, 600 125 
+           C 600 50, 450 50, 400 125 C 350 200, 200 200, 200 125 Z"
+        fill="none" stroke="url(#flatNeon)" stroke-width="14"/>
+
+  <!-- Left loop (AI core disc) -->
+  <circle cx="280" cy="125" r="45" fill="url(#flatNeon)"/>
+
+  <!-- Right loop (vinyl record style) -->
+  <circle cx="520" cy="125" r="45" fill="#111827" stroke="url(#flatNeon)" stroke-width="3"/>
+  <circle cx="520" cy="125" r="5" fill="url(#flatNeon)"/>
+
+  <!-- Text in center -->
+  <text x="150" y="230" font-family="Orbitron, Arial, sans-serif" font-size="48" font-weight="bold" 
+        fill="url(#flatNeon)">
+    CREATIVE 4 AI
+  </text>
+</svg>
