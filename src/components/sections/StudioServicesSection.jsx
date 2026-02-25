@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Video, BarChart3, Palette, Brain, Rocket } from 'lucide-react';
-import workstationImage from '../../img/Portfolio/workstation.png'; // Fixed casing
+import WorkstationImg from '../../img/portfolio/workstation.png';
 import { Button } from '@/components/ui/button';
 
 const services = [
@@ -53,7 +53,7 @@ const StudioServicesSection = ({ scrollToSection }) => {
           >
             <img
               className="w-full rounded-xl shadow-2xl"
-              src={workstationImage}
+              src={WorkstationImg}
               alt="AI Studio Workstation"
             />
           </motion.div>

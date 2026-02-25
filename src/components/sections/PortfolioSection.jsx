@@ -2,13 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Camera, Sparkles, Star, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-// [CI FIX] Temporary placeholders to bypass missing image assets on build server (Force Update)
-const fuzzyMatcherImage = "https://placehold.co/800x450/1e293b/ffffff?text=Fuzzy+Matcher+Tool";
-const webCopilotImage = "https://placehold.co/800x450/1e293b/ffffff?text=Web+Copilot";
-const imageExtractorExtensionImage = "https://placehold.co/800x450/1e293b/ffffff?text=Image+Extractor";
-const imageResequencerImage = "https://placehold.co/800x450/1e293b/ffffff?text=Image+Resequencer";
-const DashboardingImage = "https://placehold.co/800x450/1e293b/ffffff?text=Dashboarding";
-const aiMenuExtractorImage = "https://placehold.co/800x450/1e293b/ffffff?text=Menu+Extractor";
+import fuzzyMatcherImage from '../../img/portfolio/Gemini_Fuzzy_Match_Tool.png';
+import webCopilotImage from '../../img/portfolio/AI_Powered_Data_Extraction.png';
+import imageExtractorExtensionImage from '../../img/portfolio/Image_Extraction_Extention.png';
+import imageResequencerImage from '../../img/portfolio/Image_Reorder_Resequencer.png';
+import DashboardingImage from '../../img/portfolio/Dashboarding.png';
+import aiMenuExtractorImage from '../../img/portfolio/AI_Powered_Data_IMG_PDF_to_Text.png';
 
 const portfolioProjects = [
   {
