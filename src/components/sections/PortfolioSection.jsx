@@ -2,12 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Camera, Sparkles, Star, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import fuzzyMatcherImage from '../../img/Portfolio/Gemini_Fuzzy_Match_Tool.png';
-import webCopilotImage from '@/img/Portfolio/AI_Powered_Data_Extraction.png';
-import imageExtractorExtensionImage from '@/img/Portfolio/Image_Extraction_Extention.png';
-import imageResequencerImage from '@/img/Portfolio/Image_Reorder_Resequencer.png';
-import DashboardingImage from '@/img/Portfolio/Dashboarding.png';
-import aiMenuExtractorImage from '@/img/Portfolio/AI_Powered_Data_IMG_PDF_to_Text.png';
+// Temporary placeholders to ensure CI build passes while images are being uploaded
+const fuzzyMatcherImage = "https://placehold.co/800x450/1e293b/ffffff?text=Fuzzy+Matcher+Tool";
+const webCopilotImage = "https://placehold.co/800x450/1e293b/ffffff?text=Web+Copilot";
+const imageExtractorExtensionImage = "https://placehold.co/800x450/1e293b/ffffff?text=Image+Extractor";
+const imageResequencerImage = "https://placehold.co/800x450/1e293b/ffffff?text=Image+Resequencer";
+const DashboardingImage = "https://placehold.co/800x450/1e293b/ffffff?text=Dashboarding";
+const aiMenuExtractorImage = "https://placehold.co/800x450/1e293b/ffffff?text=Menu+Extractor";
 
 const portfolioProjects = [
   {
