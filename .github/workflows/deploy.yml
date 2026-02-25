@@ -26,6 +26,7 @@ jobs:
           echo "Removing conflicting image imports..."
           # Delete lines containing 'img/Portfolio' to remove the bad imports
           sed -i '/img\/Portfolio/d' src/components/sections/PortfolioSection.jsx
+          sed -i '/img\/Portfolio/d' src/components/sections/StudioServicesSection.jsx
           # Verify the constants are still there
           grep "const fuzzyMatcherImage" src/components/sections/PortfolioSection.jsx
 

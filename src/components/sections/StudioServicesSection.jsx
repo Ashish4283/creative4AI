@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Video, BarChart3, Palette, Brain, Rocket } from 'lucide-react';
-  import workstationImage from '@/img/Portfolio/Workstation.png';
+// [CI FIX] Temporary placeholder to bypass missing image assets on build server
+const workstationImage = "https://placehold.co/600x400/1e293b/ffffff?text=Workstation";
 import { Button } from '@/components/ui/button';
 
 const services = [

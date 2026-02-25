@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Camera, Sparkles, Star, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-// Temporary placeholders to ensure CI build passes while images are being uploaded
+// [CI FIX] Temporary placeholders to bypass missing image assets on build server (Force Update)
 const fuzzyMatcherImage = "https://placehold.co/800x450/1e293b/ffffff?text=Fuzzy+Matcher+Tool";
 const webCopilotImage = "https://placehold.co/800x450/1e293b/ffffff?text=Web+Copilot";
 const imageExtractorExtensionImage = "https://placehold.co/800x450/1e293b/ffffff?text=Image+Extractor";
