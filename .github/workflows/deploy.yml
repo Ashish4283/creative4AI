@@ -27,7 +27,7 @@ jobs:
       - name: Build Vite app
         run: npm run build
 
-        - name: Deploy dist to Hostinger via FTP
+      - name: Deploy dist to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
