@@ -10,3 +10,8 @@
   Header set X-Powered-By "Hostinger Horizons"
   Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 </IfModule>
+# Block access to sensitive files
+<FilesMatch "^\.env|^\.git">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

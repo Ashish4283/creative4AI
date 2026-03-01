@@ -27,8 +27,10 @@ jobs:
       - name: Build Vite app
         run: npm run build
 
-      - name: Stage API Backend to dist
-        run: cp -r api dist/
+      - name: Stage Backend Files to dist
+        run: |
+          cp -r api dist/
+          cp .env dist/
 
       - name: Deploy dist to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
