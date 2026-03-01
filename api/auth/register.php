@@ -51,7 +51,7 @@ try {
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
     // Default role is 'user' unless otherwise specified by an already authenticated admin (not handled here for security)
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, role) VALUES (:name, :email, :password_hash, 'user')");
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (:name, :email, :password_hash, 'user')");
     $stmt->bindValue(':name', $name, PDO::PARAM_STR);
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->bindValue(':password_hash', $password_hash, PDO::PARAM_STR);

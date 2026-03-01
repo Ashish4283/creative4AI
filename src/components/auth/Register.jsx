@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Register() {
     const [name, setName] = useState('');
@@ -11,28 +12,40 @@ export default function Register() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { register, login } = useAuth(); // Import from context
 
     const handleRegister = async (e) => {
         e.preventDefault();
+
+        if (!name || !email || !password) {
+            toast({ title: "Error", description: "Please fill all fields.", variant: "destructive" });
+            return;
+        }
+
         if (password !== confirmPassword) {
-            toast({ title: "Passwords don't match", variant: "destructive" });
+            toast({ title: "Error", description: "Passwords don't match", variant: "destructive" });
+            return;
+        }
+
+        if (password.length < 6) {
+            toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
             return;
         }
 
         setIsLoading(true);
 
-        // Simulate backend delay
-        setTimeout(() => {
+        const result = await register(name, email, password);
+
+        if (result.success) {
+            // Log them straight in
+            await login(email, password);
             setIsLoading(false);
-            if (name && email && password) {
-                localStorage.setItem('saas_token', 'mock_token_123');
-                localStorage.setItem('saas_user', JSON.stringify({ role: 'user', name: name }));
-                toast({ title: "Account created!", description: "Welcome to Reasoning Engine." });
-                window.location.href = '/dashboard';
-            } else {
-                toast({ title: "Error", description: "Please fill all fields.", variant: "destructive" });
-            }
-        }, 1500);
+            toast({ title: "Account created!", description: "Welcome to Reasoning Engine." });
+            navigate('/dashboard');
+        } else {
+            setIsLoading(false);
+            toast({ title: "Registration failed", description: result.message, variant: "destructive" });
+        }
     };
 
     return (

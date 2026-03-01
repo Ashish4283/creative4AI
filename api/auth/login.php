@@ -45,13 +45,13 @@ try {
     $email = trim($data["email"]);
     $password = $data["password"];
 
-    $stmt = $pdo->prepare("SELECT id, name, email, password_hash, role FROM users WHERE email = :email");
+    $stmt = $pdo->prepare("SELECT id, name, email, password, role FROM users WHERE email = :email");
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->execute();
     
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password_hash'])) {
+    if ($user && password_verify($password, $user['password'])) {
         
         $token = generate_jwt([
             'id' => (int)$user['id'],

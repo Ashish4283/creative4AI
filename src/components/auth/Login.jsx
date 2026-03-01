@@ -3,29 +3,36 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
-    const [email, setEmail] = useState('demo@example.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth(); // Import useAuth hook
 
     const handleLogin = async (e) => {
         e.preventDefault();
+
+        if (!email || !password) {
+            toast({ title: "Error", description: "Please enter your credentials.", variant: "destructive" });
+            return;
+        }
+
         setIsLoading(true);
 
-        // Simulate backend delay for now
-        setTimeout(() => {
-            setIsLoading(false);
-            if (email && password) {
-                localStorage.setItem('saas_token', 'mock_token_123');
-                localStorage.setItem('saas_user', JSON.stringify({ role: 'user', name: 'John Doe' }));
-                toast({ title: "Welcome back!", description: "Successfully logged in." });
-                window.location.href = '/dashboard';
-            } else {
-                toast({ title: "Error", description: "Please enter your credentials.", variant: "destructive" });
-            }
-        }, 1200);
+        const result = await login(email, password);
+
+        setIsLoading(false);
+
+        if (result.success) {
+            toast({ title: "Welcome back!", description: "Successfully logged in." });
+            if (result.role === 'admin') navigate('/admin');
+            else navigate('/dashboard');
+        } else {
+            toast({ title: "Login Failed", description: result.message, variant: "destructive" });
+        }
     };
 
     return (
