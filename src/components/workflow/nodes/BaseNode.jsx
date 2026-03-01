@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { LucideIcon, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 const BaseNode = ({ id, data, selected, icon: Icon, title, colorClass, borderClass, bgClass, shadowClass, children, helpText }) => {
     return (

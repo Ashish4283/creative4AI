@@ -833,7 +833,7 @@ const WorkflowBuilder = () => {
             defaultEdgeOptions={{
               type: 'smoothstep',
               animated: true,
-              style: { stroke: 'hsl(var(--primary))', strokeWidth: 2, opacity: 0.6 },
+              style: { stroke: '#8b5cf6', strokeWidth: 2, opacity: 0.8 },
               className: 'react-flow__edge-premium'
             }}
           >
