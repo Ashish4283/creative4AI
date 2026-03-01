@@ -3,10 +3,10 @@ import { mediaConvertAdapter } from '../media-convert-adapter';
 
 class WorkflowEngine {
     constructor() {
-        console.log("Workflow Engine Loaded: v2.1 (N8N Adaptors + Auto-Backend)");
+        console.log("Workflow Engine Loaded: v2.1 (C4AI Adaptors + Auto-Backend)");
         this.handlers = {
             'default': async (node, inputs) => inputs,
-            
+
             'appNode': async (node, inputs) => {
                 // Pass through inputs (which contain the form data from the start payload)
                 return inputs;
@@ -28,7 +28,7 @@ class WorkflowEngine {
                     if (method !== 'GET' && method !== 'HEAD' && body) {
                         options.body = typeof body === 'string' ? body : JSON.stringify(body);
                     }
-                    
+
                     const response = await fetch(url, options);
                     const data = await response.json();
                     return { ...inputs, data, status: response.status };
@@ -49,7 +49,7 @@ class WorkflowEngine {
                 // In a real app, value1/value2 would be resolved from inputs using {{variable}} syntax
                 const v1 = inputs[value1] !== undefined ? inputs[value1] : value1;
                 const v2 = inputs[value2] !== undefined ? inputs[value2] : value2;
-                
+
                 const isTrue = v1 == v2; // Simplified loose equality for demo
                 return { ...inputs, _route: isTrue ? ['true'] : ['false'] };
             },
@@ -67,41 +67,41 @@ class WorkflowEngine {
             'pythonNode': async (node, inputs, options = {}) => {
                 const code = node.data.code || '';
                 let env = options.environment || 'draft';
-                
+
                 // AUTO-DETECT: If code is custom (not the tutorial mock), force 'test' mode to use backend
                 const isMockCode = code.includes('moviepy') || code.includes('ffmpeg');
                 if (env === 'draft' && !isMockCode) {
                     console.log("Auto-switching to 'test' environment to execute custom Python code on backend.");
                     env = 'test';
                 }
-                
+
                 // 1. REMOTE EXECUTION (Test & Production)
                 // If environment is test or production, we send the code to the server for real execution.
                 if (env === 'production' || env === 'test') {
                     const apiUrl = node.data.backendUrl || 'https://workflow-backend-8uwh.onrender.com/execute';
-                
-                    if (apiUrl) {
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 
-                                'Content-Type': 'application/json',
-                                'X-Workflow-Env': env 
-                            },
-                            body: JSON.stringify({
-                                code: code,
-                                inputs: inputs,
-                                requirements: node.data.requirements,
-                                environment: env
-                            })
-                        });
 
-                        if (!response.ok) throw new Error(`Backend Error (${env}): ${response.statusText}`);
-                        return await response.json();
-                    } catch (error) {
-                        console.error(`Remote Execution Failed (${env}):`, error);
-                        throw error;
-                    }
+                    if (apiUrl) {
+                        try {
+                            const response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Workflow-Env': env
+                                },
+                                body: JSON.stringify({
+                                    code: code,
+                                    inputs: inputs,
+                                    requirements: node.data.requirements,
+                                    environment: env
+                                })
+                            });
+
+                            if (!response.ok) throw new Error(`Backend Error (${env}): ${response.statusText}`);
+                            return await response.json();
+                        } catch (error) {
+                            console.error(`Remote Execution Failed (${env}):`, error);
+                            throw error;
+                        }
                     }
                 }
 
@@ -109,14 +109,14 @@ class WorkflowEngine {
                 // Detects specific tutorial code to simulate execution in the browser.
                 if (code.includes('moviepy') || code.includes('ffmpeg')) {
                     await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate processing time
-                    
+
                     const targetFormat = inputs.target_format || 'mp4';
                     const sourceFile = inputs.source_file?.[0]?.name || 'video.mp4';
                     const baseName = sourceFile.split('.')[0];
-                    
+
                     // Return a sample video/audio for preview purposes
                     // Using a public domain sample video (Big Buck Bunny)
-                    const sampleUrl = targetFormat === 'mp3' 
+                    const sampleUrl = targetFormat === 'mp3'
                         ? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
                         : 'https://www.w3schools.com/html/mov_bbb.mp4';
 
@@ -125,8 +125,8 @@ class WorkflowEngine {
                         ui: {
                             type: 'media',
                             files: [
-                                { 
-                                    url: sampleUrl, 
+                                {
+                                    url: sampleUrl,
                                     mime: targetFormat === 'mp3' ? 'audio/mpeg' : 'video/mp4',
                                     name: `converted_${baseName}.${targetFormat}`
                                 }
@@ -143,10 +143,10 @@ class WorkflowEngine {
             'exportNode': async (node, inputs) => {
                 await new Promise(resolve => setTimeout(resolve, 500));
                 // Pass through the UI object so the Inspector can render the preview
-                return { 
-                    ...inputs, 
+                return {
+                    ...inputs,
                     url: inputs.ui?.files?.[0]?.url || '#',
-                    status: 'success' 
+                    status: 'success'
                 };
             },
 
@@ -162,7 +162,7 @@ class WorkflowEngine {
                     // Expecting 'file' from previous node or 'fileName' if simulated
                     const fileToConvert = inputs.file || inputs.fileName;
                     const targetFormat = node.data.targetFormat || 'pdf';
-                    
+
                     const result = await mediaConvertAdapter.convert(fileToConvert, targetFormat);
                     return { ...inputs, ...result, status: 'success' };
                 } catch (error) {
@@ -173,14 +173,14 @@ class WorkflowEngine {
     }
 
     async execute(workflowId, payload, options = {}) {
-        const { onLog = () => {}, userId } = options;
+        const { onLog = () => { }, userId } = options;
         const log = (msg) => onLog({ timestamp: new Date(), message: msg });
 
         log(`Workflow ${workflowId} started.`);
 
         try {
             const workflow = await storageAdapter.loadWorkflow(workflowId);
-            
+
             // Access Control Check
             if (workflow.ownerId && workflow.ownerId !== 'public' && userId && workflow.ownerId !== userId) {
                 throw new Error(`Access Denied: User ${userId} does not have permission to execute this workflow.`);
@@ -198,7 +198,7 @@ class WorkflowEngine {
             edges.forEach(e => {
                 if (!outgoing.has(e.source)) outgoing.set(e.source, []);
                 outgoing.get(e.source).push({ id: e.target, handle: e.sourceHandle });
-                
+
                 if (!incoming.has(e.target)) incoming.set(e.target, []);
                 incoming.get(e.target).push(e.source);
             });
@@ -214,7 +214,7 @@ class WorkflowEngine {
             while (queue.length > 0) {
                 const nodeId = queue.shift();
                 const node = nodeMap.get(nodeId);
-                
+
                 // Prepare Inputs
                 let nodeInputs = results[nodeId] || {};
                 const parents = incoming.get(nodeId) || [];
