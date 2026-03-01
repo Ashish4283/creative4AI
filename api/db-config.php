@@ -19,28 +19,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// 2. Load .env file manually if it exists (since getenv() often fails in shared hosting)
+// 2. Load .env file manually if it exists
 function loadEnv($path) {
     if (!file_exists($path)) return;
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') === false) continue;
+        
         list($name, $value) = explode('=', $line, 2);
         $name = trim($name);
         $value = trim($value, " \t\n\r\0\x0B\"'");
+        
+        // Populate all possible arrays for compatibility
         if (!getenv($name)) {
             putenv("{$name}={$value}");
+        }
+        if (!isset($_ENV[$name])) {
+            $_ENV[$name] = $value;
+        }
+        if (!isset($_SERVER[$name])) {
+            $_SERVER[$name] = $value;
         }
     }
 }
 loadEnv(__DIR__ . '/../.env');
+loadEnv(__DIR__ . '/.env'); // Also check locally just in case
 
-// 3. Database Credentials
-$host = getenv('DB_HOST') ?: "127.0.0.1";
-$db   = getenv('DB_NAME') ?: "u879603724_creative4ai";
-$user = getenv('DB_USER') ?: "u879603724_creative4ai_us";
-// Try both common password keys - No hardcoded fallback for security
-$pass = getenv('DB_PASS') ?: getenv('DB_PASSWORD');
+// 3. Helper to get env from any source
+function get_env_var($key, $default = null) {
+    $val = getenv($key);
+    if ($val !== false) return $val;
+    if (isset($_ENV[$key])) return $_ENV[$key];
+    if (isset($_SERVER[$key])) return $_SERVER[$key];
+    return $default;
+}
+
+// 4. Database Credentials
+$host = get_env_var('DB_HOST', "127.0.0.1");
+$db   = get_env_var('DB_NAME', "u879603724_creative4ai");
+$user = get_env_var('DB_USER', "u879603724_creative4ai_us");
+$pass = get_env_var('DB_PASS') ?: get_env_var('DB_PASSWORD');
 
 if (!$pass) {
     error_log("Security Error: Database password not found in environment.");
