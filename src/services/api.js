@@ -1,4 +1,4 @@
-const VITE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost';
+const VITE_URL = import.meta.env.VITE_API_BASE_URL || window.location.origin || 'http://localhost';
 const API_BASE_URL = VITE_URL.replace(/\/api\/?$/, '') + '/api';
 
 const fetchWithAuth = async (endpoint, options = {}) => {
