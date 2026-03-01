@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost/api';
+const VITE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost';
+const API_BASE_URL = VITE_URL.replace(/\/api\/?$/, '') + '/api';
 
 const fetchWithAuth = async (endpoint, options = {}) => {
     const token = localStorage.getItem('saas_token');

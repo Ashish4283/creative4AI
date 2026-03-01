@@ -10,4 +10,5 @@ Options -Indexes
     Header always set Access-Control-Allow-Origin "*"
     Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
     Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 </IfModule>
