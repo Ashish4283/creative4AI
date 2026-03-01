@@ -16,6 +16,17 @@ module.exports = {
 			},
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Inter', 'sans-serif'],
+				outfit: ['Outfit', 'sans-serif'],
+			},
+			center: true,
+			padding: '2rem',
+			screens: {
+				'2xl': '1400px',
+			},
+		},
+		extend: {
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

@@ -1,16 +1,18 @@
+import { getWorkflows as fetchWorkflows, saveWorkflow as uploadWorkflow } from '../services/api.js';
+
 /**
  * Storage Adapter Interface
  * 
- * Designed to allow future replacement with GCS/S3/NodeFS
+ * Designed to allow future replacement with GCS/S3/NodeFS/API
  * without changing the builder or engine code.
  */
 
 class StorageAdapter {
-  async saveWorkflow(id, workflowJson, userId) { throw new Error('Not implemented'); }
-  async loadWorkflow(id) { throw new Error('Not implemented'); }
-  async listWorkflows(userId) { throw new Error('Not implemented'); }
-  async deleteWorkflow(id) { throw new Error('Not implemented'); }
-  async promoteWorkflow(id, targetEnvironment) { throw new Error('Not implemented'); }
+    async saveWorkflow(id, workflowJson, userId) { throw new Error('Not implemented'); }
+    async loadWorkflow(id) { throw new Error('Not implemented'); }
+    async listWorkflows(userId) { throw new Error('Not implemented'); }
+    async deleteWorkflow(id) { throw new Error('Not implemented'); }
+    async promoteWorkflow(id, targetEnvironment) { throw new Error('Not implemented'); }
 }
 
 /**
@@ -32,7 +34,7 @@ export class LocalBrowserAdapter extends StorageAdapter {
     async saveWorkflow(id, workflowJson, userId = null) {
         try {
             const key = this._getKey(id);
-            
+
             // Overwrite on save - No partial updates
             const metadata = {
                 id,
@@ -42,7 +44,7 @@ export class LocalBrowserAdapter extends StorageAdapter {
                 ownerId: userId || workflowJson.ownerId || 'public',
                 environment: workflowJson.environment || 'draft'
             };
-            
+
             const dataToSave = {
                 ...workflowJson,
                 ...metadata
@@ -58,12 +60,12 @@ export class LocalBrowserAdapter extends StorageAdapter {
 
     async promoteWorkflow(id, targetEnvironment) {
         const workflow = await this.loadWorkflow(id);
-        
+
         // Clean ID generation: Strip previous env suffix if present
         let baseId = id.replace(/_(test|draft|production)$/, '');
-        
+
         const targetId = `${baseId}_${targetEnvironment}`;
-        
+
         const promotedData = {
             ...workflow,
             id: targetId,
@@ -71,7 +73,7 @@ export class LocalBrowserAdapter extends StorageAdapter {
             updatedAt: new Date().toISOString(),
             originalId: id
         };
-        
+
         const key = this._getKey(targetId);
         localStorage.setItem(key, JSON.stringify(promotedData));
         return promotedData;
@@ -127,7 +129,7 @@ export class FileSystemAdapter extends StorageAdapter {
             const filename = this._getFilename(id);
             const fileHandle = await this.directoryHandle.getFileHandle(filename, { create: true });
             const writable = await fileHandle.createWritable();
-            
+
             const metadata = {
                 id,
                 updatedAt: new Date().toISOString(),
@@ -136,7 +138,7 @@ export class FileSystemAdapter extends StorageAdapter {
                 ownerId: userId || workflowJson.ownerId || 'public',
                 environment: workflowJson.environment || 'draft'
             };
-            
+
             const dataToSave = { ...workflowJson, ...metadata };
 
             await writable.write(JSON.stringify(dataToSave, null, 2));
@@ -207,7 +209,7 @@ export class NodeFSAdapter extends StorageAdapter {
                 // Dynamic imports to avoid bundling errors in browser environments
                 this.fs = await import('node:fs/promises');
                 this.path = await import('node:path');
-                
+
                 // Ensure directory exists
                 try {
                     await this.fs.access(this.basePath);
@@ -227,7 +229,7 @@ export class NodeFSAdapter extends StorageAdapter {
         await this._ensureInit();
         try {
             const workflowDir = this._getWorkflowDir(id);
-            
+
             // Ensure workflow directory exists
             try {
                 await this.fs.access(workflowDir);
@@ -249,7 +251,7 @@ export class NodeFSAdapter extends StorageAdapter {
                 ownerId: userId || workflowJson.ownerId || 'public',
                 environment: workflowJson.environment || 'draft'
             };
-            
+
             const dataToSave = { ...workflowJson, ...metadata };
             await this.fs.writeFile(filePath, JSON.stringify(dataToSave, null, 2));
             return dataToSave;
@@ -275,11 +277,11 @@ export class NodeFSAdapter extends StorageAdapter {
     async loadWorkflow(id) {
         await this._ensureInit();
         const workflowDir = this._getWorkflowDir(id);
-        
+
         // Get all files, filter for .json, sort by version to find latest
         const files = await this.fs.readdir(workflowDir);
         const jsonFiles = files.filter(f => f.endsWith('.json'));
-        
+
         if (jsonFiles.length === 0) throw new Error("Workflow not found");
 
         // Sort versions descending (e.g. 1.10 > 1.2)
@@ -299,7 +301,7 @@ export class NodeFSAdapter extends StorageAdapter {
         await this._ensureInit();
         try {
             const entries = await this.fs.readdir(this.basePath, { withFileTypes: true });
-            
+
             const workflowPromises = entries
                 .filter(entry => entry.isDirectory())
                 .map(async (entry) => {
@@ -327,10 +329,89 @@ export class NodeFSAdapter extends StorageAdapter {
     }
 }
 
+/**
+ * Backend API Adapter (PHP/MySQL)
+ */
+export class ApiAdapter extends StorageAdapter {
+    async saveWorkflow(id, workflowJson, userId = 1) {
+        try {
+            // Is id an integer?
+            const isNumericId = !isNaN(parseInt(id)) && isFinite(id);
+            const payload = {
+                user_id: userId,
+                name: workflowJson.name || 'Untitled Workflow',
+                builder_json: workflowJson
+            };
+            if (isNumericId) {
+                payload.id = parseInt(id, 10);
+            }
+
+            const response = await uploadWorkflow(payload);
+            const savedId = response.id;
+
+            return {
+                ...workflowJson,
+                id: savedId, // Use the DB generated ID
+                name: payload.name,
+                ownerId: userId,
+                updatedAt: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error("API Save Error:", error);
+            throw new Error("Failed to save workflow to API.");
+        }
+    }
+
+    async loadWorkflow(id) {
+        try {
+            const response = await fetchWorkflows(1); // default user_id = 1
+            const workflow = response.data.find(w => String(w.id) === String(id));
+            if (!workflow) throw new Error(`Workflow ${id} not found.`);
+            return {
+                ...workflow.builder_json,
+                id: workflow.id,
+                name: workflow.name,
+                updatedAt: workflow.updated_at
+            };
+        } catch (e) {
+            console.error("API Load Error:", e);
+            throw new Error("Failed to load workflow from API.");
+        }
+    }
+
+    async listWorkflows(userId = 1) {
+        try {
+            const response = await fetchWorkflows(userId);
+            return response.data.map(w => ({
+                ...w.builder_json,
+                id: w.id,
+                name: w.name,
+                updatedAt: w.updated_at
+            }));
+        } catch (e) {
+            console.error("API List Error:", e);
+            return [];
+        }
+    }
+
+    async deleteWorkflow(id) {
+        console.warn("API deleteWorkflow not implemented on backend.");
+    }
+
+    async promoteWorkflow(id, targetEnvironment) {
+        console.warn("API promoteWorkflow not implemented on backend.");
+        const workflow = await this.loadWorkflow(id);
+        workflow.environment = targetEnvironment;
+        return this.saveWorkflow(id, workflow, workflow.ownerId);
+    }
+}
+
 class StorageManager extends StorageAdapter {
     constructor() {
         super();
-        this.adapter = new LocalBrowserAdapter();
+        // Use ApiAdapter by default to integrate with backend
+        this.adapter = new ApiAdapter();
+        // Fallback to local browser storage if API is unreachable can be managed here if needed
     }
 
     saveWorkflow(...args) { return this.adapter.saveWorkflow(...args); }
@@ -342,6 +423,7 @@ class StorageManager extends StorageAdapter {
     setFileSystem(handle) { this.adapter = new FileSystemAdapter(handle); return this; }
     setBrowser() { this.adapter = new LocalBrowserAdapter(); return this; }
     setNodeFS(basePath) { this.adapter = new NodeFSAdapter(basePath); return this; }
+    setApi() { this.adapter = new ApiAdapter(); return this; }
 }
 
 export const storageAdapter = new StorageManager();

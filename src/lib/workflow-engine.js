@@ -1,4 +1,5 @@
 import { storageAdapter } from './workflow-storage';
+import { mediaConvertAdapter } from '../media-convert-adapter';
 
 class WorkflowEngine {
     constructor() {
@@ -154,6 +155,19 @@ class WorkflowEngine {
                 const { conditionVar, conditionOp, conditionVal } = node.data;
                 // In a real engine, we'd evaluate this against inputs
                 return { ...inputs, logic_result: true };
+            },
+
+            'mediaConvert': async (node, inputs) => {
+                try {
+                    // Expecting 'file' from previous node or 'fileName' if simulated
+                    const fileToConvert = inputs.file || inputs.fileName;
+                    const targetFormat = node.data.targetFormat || 'pdf';
+                    
+                    const result = await mediaConvertAdapter.convert(fileToConvert, targetFormat);
+                    return { ...inputs, ...result, status: 'success' };
+                } catch (error) {
+                    throw new Error(`Media Conversion Failed: ${error.message}`);
+                }
             }
         };
     }

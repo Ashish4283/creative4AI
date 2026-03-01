@@ -1,133 +1,179 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { workflowEngine } from './lib/workflow-engine';
 import { storageAdapter } from './lib/workflow-storage';
-
-// Default workflow definition to ensure we have something to run
-const SAMPLE_WORKFLOW = {
-    name: "User Signup Flow",
-    version: "1.0",
-    nodes: [
-        { id: "trigger", type: "start", entry: true, data: { label: "Webhook Trigger" } },
-        { id: "log-1", type: "log", data: { message: "Received new user signup request" } },
-        { id: "log-2", type: "log", data: { message: "Validating email address..." } },
-        { id: "log-3", type: "log", data: { message: "Sending welcome email to user..." } }
-    ],
-    edges: [
-        { source: "trigger", target: "log-1" },
-        { source: "log-1", target: "log-2" },
-        { source: "log-2", target: "log-3" }
-    ]
-};
+import { Loader2, UploadCloud, CheckCircle, AlertCircle, File as FileIcon } from 'lucide-react';
 
 export default function UserApp() {
-    const [email, setEmail] = useState("alice@example.com");
-    const [logs, setLogs] = useState([]);
+    const [searchParams] = useSearchParams();
+    const workflowId = searchParams.get('id');
+    
+    const [workflow, setWorkflow] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState("idle"); // idle, running, completed, error
     const [result, setResult] = useState(null);
+    const [error, setError] = useState(null);
 
-    // Helper to ensure the workflow exists in LocalStorage
-    const ensureWorkflowExists = async () => {
-        try {
-            await storageAdapter.loadWorkflow("signup-process");
-        } catch {
-            console.log("Seeding default workflow...");
-            await storageAdapter.saveWorkflow("signup-process", SAMPLE_WORKFLOW);
+    // Form State
+    const [file, setFile] = useState(null);
+    const [formData, setFormData] = useState({});
+
+    useEffect(() => {
+        async function loadApp() {
+            if (!workflowId) {
+                setLoading(false);
+                return;
+            }
+            try {
+                const wf = await storageAdapter.loadWorkflow(workflowId);
+                setWorkflow(wf);
+            } catch (err) {
+                setError("App not found. Please check the ID.");
+            } finally {
+                setLoading(false);
+            }
         }
-    };
+        loadApp();
+    }, [workflowId]);
+
+    // Heuristic to determine App Type based on workflow nodes
+    const isMediaApp = workflow?.nodes?.some(n => n.data.type === 'mediaConvert');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Reset State
-        setLogs([]);
         setStatus("running");
         setResult(null);
-
-        // 1. Create Payload
-        const payload = {
-            userId: `user_${Math.floor(Math.random() * 1000)}`,
-            email,
-            source: "web_form",
-            timestamp: new Date().toISOString()
-        };
+        setError(null);
 
         try {
-            await ensureWorkflowExists();
+            const payload = {
+                ...formData,
+                file: file, // Pass the actual File object
+                fileName: file?.name,
+                timestamp: new Date().toISOString()
+            };
 
-            // 2. Execute Workflow with Log Streaming
-            const resultContext = await workflowEngine.execute("signup-process", payload, {
-                onLog: (logEntry) => {
-                    setLogs(prev => [...prev, logEntry]);
-                }
+            const resultContext = await workflowEngine.execute(workflowId, payload, {
+                onLog: (log) => console.log(`[App Log] ${log.message}`)
             });
 
-            // 3. Handle Output
-            setResult(resultContext.results);
+            // Find the result from the media node if it exists, or the last node
+            let output = resultContext.results;
+            if (isMediaApp) {
+                const mediaNode = workflow.nodes.find(n => n.data.type === 'mediaConvert');
+                if (mediaNode && resultContext.results[mediaNode.id]) {
+                    output = resultContext.results[mediaNode.id];
+                }
+            }
+
+            setResult(output);
             setStatus("completed");
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
             setStatus("error");
-            setLogs(prev => [...prev, { timestamp: Date.now(), message: `❌ Error: ${error.message}` }]);
         }
     };
 
-    return (
-        <div className="max-w-2xl mx-auto p-6 space-y-8 font-sans text-gray-800">
-            <div className="border-b pb-4">
-                <h1 className="text-2xl font-bold">User Signup Simulation</h1>
-                <p className="text-gray-500">Simulates a frontend triggering a backend workflow.</p>
-            </div>
+    if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>;
+    if (!workflow) return <div className="flex h-screen items-center justify-center text-gray-500">No App ID provided. Launch this from the Builder.</div>;
 
-            {/* UI Input Section */}
-            <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
-                <h2 className="text-lg font-semibold mb-4">1. User Registration</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                        <input 
-                            type="email" 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full rounded-md border border-gray-300 p-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                            required
-                        />
+    return (
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 font-sans">
+            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
+                <div className="text-center">
+                    <h2 className="mt-2 text-3xl font-extrabold text-gray-900">{workflow.name}</h2>
+                    <p className="mt-2 text-sm text-gray-600">Generated App v{workflow.version}</p>
+                </div>
+
+                {status === 'completed' ? (
+                    <div className="rounded-md bg-green-50 p-4 text-center animate-in fade-in zoom-in duration-300">
+                        <div className="flex justify-center mb-4">
+                            <CheckCircle className="h-12 w-12 text-green-500" />
+                        </div>
+                        <h3 className="text-lg font-medium text-green-800">Success!</h3>
+                        <div className="mt-2 text-sm text-green-700">
+                            {isMediaApp && result?.url ? (
+                                <a href={result.url} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
+                                    Download Converted File
+                                </a>
+                            ) : (
+                                <pre className="text-left bg-white p-2 rounded border border-green-200 overflow-auto max-h-40">
+                                    {JSON.stringify(result, null, 2)}
+                                </pre>
+                            )}
+                        </div>
+                        <button 
+                            onClick={() => { setStatus('idle'); setFile(null); setResult(null); }}
+                            className="mt-4 text-sm text-green-600 hover:text-green-500 font-medium"
+                        >
+                            Start Over
+                        </button>
                     </div>
+                ) : (
+                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                        {isMediaApp ? (
+                            <div className="space-y-4">
+                                <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-purple-400 transition-colors bg-gray-50">
+                                    <div className="space-y-1 text-center">
+                                        {file ? (
+                                            <div className="flex flex-col items-center">
+                                                <FileIcon className="mx-auto h-12 w-12 text-purple-500" />
+                                                <p className="text-sm text-gray-700 mt-2 font-medium">{file.name}</p>
+                                                <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                <button type="button" onClick={() => setFile(null)} className="text-xs text-red-500 mt-2 hover:underline">Remove</button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
+                                                <div className="flex text-sm text-gray-600 justify-center">
+                                                    <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none">
+                                                        <span>Upload a file</span>
+                                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={(e) => setFile(e.target.files[0])} required />
+                                                    </label>
+                                                </div>
+                                                <p className="text-xs text-gray-500">Audio, Video, Images, or Documents</p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">Input Data (JSON)</label>
+                                <textarea 
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                    rows={4}
+                                    placeholder='{"email": "..."}'
+                                    onChange={(e) => setFormData(JSON.parse(e.target.value || '{}'))}
+                                />
+                            </div>
+                        )}
+
+                        {error && (
+                            <div className="rounded-md bg-red-50 p-4 flex items-center gap-3">
+                                <AlertCircle className="h-5 w-5 text-red-400" />
+                                <p className="text-sm text-red-700">{error}</p>
+                            </div>
+                        )}
+
                     <button 
                         type="submit" 
                         disabled={status === 'running'}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${status === 'running' ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all`}
                     >
-                        {status === 'running' ? 'Processing...' : 'Submit Signup'}
+                        {status === 'running' ? (
+                            <>
+                                <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                                Processing...
+                            </>
+                        ) : (
+                            isMediaApp ? 'Convert File' : 'Run App'
+                        )}
                     </button>
                 </form>
+                )}
             </div>
-
-            {/* Logs Stream Section */}
-            <div className="bg-gray-900 text-gray-100 p-6 rounded-lg shadow font-mono text-sm h-64 overflow-y-auto">
-                <h2 className="text-gray-400 font-semibold mb-2 sticky top-0 bg-gray-900 pb-2 border-b border-gray-700 flex justify-between">
-                    <span>Server Logs</span>
-                    {status === 'running' && <span className="animate-pulse text-green-400">● Live</span>}
-                </h2>
-                <ul className="space-y-1">
-                    {logs.length === 0 && <li className="text-gray-600 italic">Waiting for execution...</li>}
-                    {logs.map((log, i) => (
-                        <li key={i} className="flex gap-3">
-                            <span className="text-gray-500 shrink-0">[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-                            <span>{log.message}</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-
-            {/* Output Section */}
-            {status === 'completed' && (
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                    <h2 className="text-green-800 font-semibold mb-2">✅ Workflow Output</h2>
-                    <pre className="text-sm text-green-900 overflow-auto bg-green-100 p-4 rounded">
-                        {JSON.stringify(result, null, 2)}
-                    </pre>
-                </div>
-            )}
         </div>
     );
 }
