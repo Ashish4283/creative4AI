@@ -2,3 +2,7 @@ flask
 flask-cors
 mysql-connector-python
 python-dotenv
+bcrypt
+sqlalchemy
+PyJWT
+tenacity

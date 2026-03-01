@@ -1,9 +1,10 @@
 import os
-import mysql.connector
-from mysql.connector import errorcode
+import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
+import bcrypt
+from db_middleware import db_middleware  # Import our new middleware
 
 # Load environment variables
 load_dotenv()
@@ -11,30 +12,15 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # Allow React frontend to communicate with this backend
 
-# Database Configuration (Matches your Hostinger setup)
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_NAME = os.getenv("DB_NAME", "creative4ai")
-
-def get_db_connection():
-    """Establishes a connection to the remote MySQL database."""
-    try:
-        connection = mysql.connector.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME,
-            connect_timeout=10  # Timeout for remote connections
-        )
-        return connection
-    except mysql.connector.Error as err:
-        print(f"Database Connection Error: {err}")
-        return None
+def get_auth_token():
+    auth_header = request.headers.get('Authorization')
+    if auth_header and auth_header.startswith('Bearer '):
+        return auth_header.split(" ")[1]
+    return None
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok", "message": "Python Backend is running"}), 200
+    return jsonify({"status": "ok", "message": "Python Backend with Throttled Middleware is running"}), 200
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -45,32 +31,55 @@ def login():
     email = data['email']
     password = data['password']
 
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Cannot connect to database. Check DB_HOST and firewall settings."}), 500
-
     try:
-        cursor = conn.cursor(dictionary=True)
-        # Query to find user by email
-        # Note: In production, ensure you compare hashed passwords (e.g., bcrypt)
-        query = "SELECT id, email, role, name, status FROM users WHERE email = %s"
-        cursor.execute(query, (email,))
-        user = cursor.fetchone()
+        # Use middleware for pooled connection
+        query = "SELECT id, email, role, name, status, password FROM users WHERE email = :email"
+        result = db_middleware.execute_query(query, {"email": email}).mappings().fetchone()
 
-        # Simple password check (Update this if your PHP backend uses hashing like bcrypt)
-        if user and user.get('password') == password: 
-             # If using hashing, use: if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
-            return jsonify({"message": "Login successful", "user": user}), 200
-        elif user:
-             # Fallback for plain text comparison if hash check wasn't used above
-             return jsonify({"error": "Invalid credentials"}), 401
+        if result:
+            user = dict(result)
+            stored_password = user.get('password')
+            
+            # 1. Try verifying as a bcrypt hash
+            if stored_password:
+                try:
+                    if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                        user.pop('password', None) # Safely remove password
+                        return jsonify({"message": "Login successful", "user": user}), 200
+                except (ValueError, TypeError):
+                    # 2. Fallback: Plain text check
+                    if stored_password == password:
+                        user.pop('password', None)
+                        return jsonify({"message": "Login successful", "user": user}), 200
+            
+            return jsonify({"error": "Invalid credentials"}), 401
         else:
             return jsonify({"error": "User not found"}), 404
-    finally:
-        if conn and conn.is_connected():
-            cursor.close()
-            conn.close()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/process-result', methods=['POST'])
+def process_result():
+    """Example of a high-concurrency route using batch writing."""
+    token = get_auth_token()
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Stateless verification (No DB hit)
+    user_payload = db_middleware.verify_token(token)
+    if "error" in user_payload:
+        return jsonify(user_payload), 401
+
+    data = request.json
+    # Buffer the result for batch writing instead of immediate DB hit
+    db_middleware.buffer_write("process_logs", {
+        "user_id": user_payload['id'],
+        "result_data": str(data.get('result')),
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+
+    return jsonify({"status": "buffered", "message": "Result received and queued for batch sync"}), 202
 
 if __name__ == '__main__':
-    print(f"Starting Python Backend on port 5000...")
-    app.run(debug=True, port=5000)
+    print(f"Starting High-Concurrency Python Backend on port 5000...")
+    app.run(debug=True, host='0.0.0.0', port=5000)
