@@ -39,8 +39,15 @@ loadEnv(__DIR__ . '/../.env');
 $host = getenv('DB_HOST') ?: "127.0.0.1";
 $db   = getenv('DB_NAME') ?: "u879603724_creative4ai";
 $user = getenv('DB_USER') ?: "u879603724_creative4ai_us";
-// Try both common password keys
-$pass = getenv('DB_PASS') ?: getenv('DB_PASSWORD') ?: "StrongPassDB@123";
+// Try both common password keys - No hardcoded fallback for security
+$pass = getenv('DB_PASS') ?: getenv('DB_PASSWORD');
+
+if (!$pass) {
+    error_log("Security Error: Database password not found in environment.");
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => "Server configuration error."]);
+    exit;
+}
 
 // 3. PDO Connection Setup
 $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
