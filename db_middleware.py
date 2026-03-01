@@ -8,11 +8,11 @@ load_dotenv()
 
 class DBMiddleware:
     def __init__(self):
-        self.db_host = os.getenv("DB_HOST", "localhost")
-        self.db_user = os.getenv("DB_USER", "root")
-        self.db_password = os.getenv("DB_PASSWORD", "")
-        self.db_name = os.getenv("DB_NAME", "creative4ai")
-        self.jwt_secret = os.getenv("JWT_SECRET", "default_secret_key")
+        self.db_host = os.getenv("DB_HOST", "127.0.0.1")
+        self.db_user = os.getenv("DB_USER", "u879603724_creative4ai_us")
+        self.db_password = os.getenv("DB_PASSWORD", "StrongPassDB@123")
+        self.db_name = os.getenv("DB_NAME", "u879603724_creative4ai")
+        self.jwt_secret = os.getenv("JWT_SECRET", "SUPER_SECRET_FALLBACK_KEY_CHANGE_ME_IMMEDIATELY_123!")
         
         # Create SQLAlchemy engine for connection pooling
         # Using mysql-connector-python driver
