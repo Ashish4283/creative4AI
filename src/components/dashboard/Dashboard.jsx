@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Brain, LayoutDashboard, Workflow, Users, Settings, LogOut, Bell, Search, Plus, Activity, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import StatCard from './StatCard';
 
 const MOCK_WORKFLOWS = [
@@ -21,6 +22,10 @@ export default function Dashboard() {
         window.location.href = '/login';
     };
 
+    const handleComingSoon = () => {
+        toast({ title: "Feature Coming Soon", description: "The backend agent is currently working on this feature!" });
+    };
+
     return (
         <div className="min-h-screen bg-background text-foreground flex overflow-hidden">
             {/* Sidebar */}
@@ -38,16 +43,16 @@ export default function Dashboard() {
                     <button onClick={() => setActiveTab('overview')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'overview' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
                         <LayoutDashboard className="w-4 h-4" /> Overview
                     </button>
-                    <button onClick={() => setActiveTab('workflows')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'workflows' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
+                    <button onClick={handleComingSoon} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'workflows' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
                         <Workflow className="w-4 h-4" /> Workflows
                     </button>
-                    <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'team' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
+                    <button onClick={handleComingSoon} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === 'team' ? 'bg-primary/10 text-primary' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'}`}>
                         <Users className="w-4 h-4" /> Team
                     </button>
                 </div>
 
                 <div className="p-4 border-t border-slate-800 space-y-1">
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
+                    <button onClick={handleComingSoon} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors">
                         <Settings className="w-4 h-4" /> Settings
                     </button>
                     <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
@@ -75,7 +80,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="flex items-center gap-4 ml-4">
-                        <button className="relative p-2 text-slate-400 hover:text-slate-200 transition-colors">
+                        <button onClick={handleComingSoon} className="relative p-2 text-slate-400 hover:text-slate-200 transition-colors">
                             <Bell className="w-5 h-5" />
                             <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-slate-950"></span>
                         </button>
@@ -94,7 +99,7 @@ export default function Dashboard() {
                             <h1 className="text-3xl font-bold font-outfit tracking-tight text-white mb-1">Overview</h1>
                             <p className="text-slate-400">Welcome back, John. Here's what's happening today.</p>
                         </div>
-                        <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                        <Button onClick={() => navigate('/builder')} className="bg-primary hover:bg-primary/90 text-white gap-2 shadow-[0_0_15px_rgba(139,92,246,0.3)]">
                             <Plus className="w-4 h-4" /> New Workflow
                         </Button>
                     </div>
@@ -111,7 +116,7 @@ export default function Dashboard() {
                     <div>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold font-outfit text-white">Recent Workflows</h2>
-                            <Button variant="ghost" className="text-primary hover:text-primary/80 hover:bg-primary/10 gap-1 text-sm">
+                            <Button variant="ghost" onClick={handleComingSoon} className="text-primary hover:text-primary/80 hover:bg-primary/10 gap-1 text-sm">
                                 View All <ArrowRight className="w-4 h-4" />
                             </Button>
                         </div>
@@ -129,7 +134,7 @@ export default function Dashboard() {
                                 </thead>
                                 <tbody className="text-sm">
                                     {MOCK_WORKFLOWS.map((wf) => (
-                                        <tr key={wf.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => navigate('/')}>
+                                        <tr key={wf.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer" onClick={() => navigate('/builder')}>
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-200 group-hover:text-primary transition-colors">{wf.name}</div>
                                             </td>
