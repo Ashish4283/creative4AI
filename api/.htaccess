@@ -1,0 +1,13 @@
+# Allow Authorization Header to be passed to PHP scripts
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+SetEnvIf HTTP_AUTHORIZATION "(.*)" HTTP_AUTHORIZATION=$1
+
+# Disable directory listing to prevent unintentional 403 errors when visiting /api/ directly
+Options -Indexes
+
+# CORS Headers (Optional, as PHP already sends them, but good fallback for certain Apache configs)
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+    Header always set Access-Control-Allow-Headers "x-requested-with, Content-Type, origin, authorization, accept, client-security-token"
+</IfModule>
