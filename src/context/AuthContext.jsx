@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { login as loginApi, register as registerApi } from '../services/api';
+import { login as loginApi, register as registerApi, googleLogin as googleLoginApi } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -54,6 +54,19 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithGoogle = async (credential) => {
+        try {
+            const response = await googleLoginApi(credential);
+            if (response.status === 'success') {
+                saveSession(response.data.user, response.data.token);
+                return { success: true, role: response.data.user.role };
+            }
+            return { success: false, message: response.message };
+        } catch (error) {
+            return { success: false, message: error.message || "An error occurred during Google authentication." };
+        }
+    };
+
     const logout = () => {
         setUser(null);
         setToken(null);
@@ -68,6 +81,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token,
         login,
         register,
+        loginWithGoogle,
         logout
     };
 

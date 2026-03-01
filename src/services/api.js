@@ -54,6 +54,19 @@ export const register = async (name, email, password) => {
     }
 };
 
+export const googleLogin = async (credential) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/google.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential })
+        });
+        return await response.json();
+    } catch (e) {
+        throw e;
+    }
+};
+
 // --- WORKFLOW API ---
 
 export const getWorkflows = async (page = 1, limit = 50) => {

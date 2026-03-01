@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -10,7 +11,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth(); // Import useAuth hook
+    const { login, loginWithGoogle } = useAuth(); // Import useAuth hooks
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -32,6 +33,19 @@ export default function Login() {
             else navigate('/dashboard');
         } else {
             toast({ title: "Login Failed", description: result.message, variant: "destructive" });
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        setIsLoading(true);
+        const result = await loginWithGoogle(credentialResponse.credential);
+        setIsLoading(false);
+        if (result.success) {
+            toast({ title: "Welcome!", description: "Successfully logged in with Google." });
+            if (result.role === 'admin') navigate('/admin');
+            else navigate('/dashboard');
+        } else {
+            toast({ title: "Google Login Failed", description: result.message, variant: "destructive" });
         }
     };
 
@@ -92,6 +106,24 @@ export default function Login() {
                     )}
                 </Button>
             </form>
+
+            <div className="mt-6 flex items-center justify-between">
+                <span className="border-b border-slate-800 w-1/5 lg:w-1/4"></span>
+                <span className="text-xs text-center text-slate-500 uppercase">or continue with</span>
+                <span className="border-b border-slate-800 w-1/5 lg:w-1/4"></span>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+                <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={() => {
+                        toast({ title: "Error", description: "Google Login Failed", variant: "destructive" });
+                    }}
+                    theme="filled_black"
+                    shape="rectangular"
+                    text="signin_with"
+                />
+            </div>
 
             <div className="mt-8 text-center text-sm">
                 <span className="text-slate-500">Don't have an account? </span>
