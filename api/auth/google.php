@@ -31,6 +31,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// --- AUTO-MIGRATION START ---
+// This ensures the database is always ready for Google Auth
+try {
+    $stmt = $pdo->query("DESCRIBE users");
+    $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    // Check auth_provider
+    if (!in_array('auth_provider', $columns)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local' AFTER email");
+    }
+    // Check provider_id
+    if (!in_array('provider_id', $columns)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN provider_id VARCHAR(255) AFTER auth_provider");
+    }
+    // Check password nullability
+    $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'password'");
+    $passInfo = $stmt->fetch();
+    if ($passInfo && $passInfo['Null'] === 'NO') {
+        $pdo->exec("ALTER TABLE users MODIFY COLUMN password VARCHAR(255) NULL");
+    }
+    // Check roles ENUM
+    $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'manager', 'user', 'worker') DEFAULT 'user'");
+    
+} catch (Exception $e) {
+    // Log migration errors but don't stop the script (maybe columns already exist)
+    error_log("Auto-migration notice: " . $e->getMessage());
+}
+// --- AUTO-MIGRATION END ---
+
 try {
     $rawInput = file_get_contents("php://input");
     $data = json_decode($rawInput, true);
