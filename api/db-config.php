@@ -44,7 +44,8 @@ function loadEnv($path) {
     }
 }
 loadEnv(__DIR__ . '/../.env');
-loadEnv(__DIR__ . '/.env'); // Also check locally just in case
+loadEnv(__DIR__ . '/.env'); 
+loadEnv($_SERVER['DOCUMENT_ROOT'] . '/.env');
 
 // 3. Helper to get env from any source
 function get_env_var($key, $default = null) {
