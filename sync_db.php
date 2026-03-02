@@ -52,6 +52,32 @@ try {
         echo "Renamed password_hash to password and made nullable: OK\n";
     }
 
+    // 6. Add trial_ends_at and manager_id to users
+    if (!columnExists($pdo, 'users', 'trial_ends_at')) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN trial_ends_at TIMESTAMP NULL AFTER created_at");
+        echo "Added trial_ends_at column: OK\n";
+    }
+    if (!columnExists($pdo, 'users', 'manager_id')) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN manager_id INT NULL AFTER id, ADD CONSTRAINT fk_manager FOREIGN KEY (manager_id) REFERENCES users(id) ON DELETE SET NULL");
+        echo "Added manager_id column and FK: OK\n";
+    }
+
+    // 7. Create invitation_links table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS invitation_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        token VARCHAR(64) UNIQUE NOT NULL,
+        type ENUM('manager_invite', 'agent_invite') NOT NULL,
+        creator_id INT NOT NULL,
+        workflow_id INT NULL,
+        expires_at TIMESTAMP NULL,
+        max_uses INT DEFAULT 1,
+        uses_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
+    )");
+    echo "Check/Create invitation_links table: OK\n";
+
     echo "\n--- Final Table Structure ---\n";
     $stmt = $pdo->query("DESCRIBE users");
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

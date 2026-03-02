@@ -51,11 +51,15 @@ try {
     // Hash the password securely
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
-    // Default role is 'user' unless otherwise specified by an already authenticated admin (not handled here for security)
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (:name, :email, :password_hash, 'user')");
+    // Default role is 'user'
+    // Set trial to 14 days from now
+    $trial_expiry = date('Y-m-d H:i:s', strtotime('+14 days'));
+
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, trial_ends_at) VALUES (:name, :email, :password_hash, 'user', :trial_expiry)");
     $stmt->bindValue(':name', $name, PDO::PARAM_STR);
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->bindValue(':password_hash', $password_hash, PDO::PARAM_STR);
+    $stmt->bindValue(':trial_expiry', $trial_expiry, PDO::PARAM_STR);
     $stmt->execute();
 
     $newUserId = $pdo->lastInsertId();

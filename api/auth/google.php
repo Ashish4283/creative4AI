@@ -54,6 +54,15 @@ try {
     // Check roles ENUM
     $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'manager', 'user', 'worker') DEFAULT 'user'");
     
+    // Check trial_ends_at
+    if (!in_array('trial_ends_at', $columns)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN trial_ends_at TIMESTAMP NULL AFTER created_at");
+    }
+    // Check manager_id
+    if (!in_array('manager_id', $columns)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN manager_id INT NULL AFTER id");
+    }
+
 } catch (Exception $e) {
     // Log migration errors but don't stop the script (maybe columns already exist)
     error_log("Auto-migration notice: " . $e->getMessage());
@@ -123,11 +132,15 @@ try {
         $userRole = $user['role'];
     } else {
         // Create new user completely without a password
-        $insertStmt = $pdo->prepare("INSERT INTO users (name, email, role, auth_provider, provider_id) VALUES (:name, :email, 'user', 'google', :provider_id)");
+        // Set trial to 14 days from now
+        $trial_expiry = date('Y-m-d H:i:s', strtotime('+14 days'));
+        
+        $insertStmt = $pdo->prepare("INSERT INTO users (name, email, role, auth_provider, provider_id, trial_ends_at) VALUES (:name, :email, 'user', 'google', :provider_id, :trial_expiry)");
         $insertStmt->execute([
             ':name' => $name,
             ':email' => $email,
-            ':provider_id' => $google_id
+            ':provider_id' => $google_id,
+            ':trial_expiry' => $trial_expiry
         ]);
         
         $userId = $pdo->lastInsertId();
