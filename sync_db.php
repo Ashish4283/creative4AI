@@ -1,30 +1,49 @@
 <?php
 require_once 'api/db-config.php';
 
+header("Content-Type: text/html");
+echo "<html><head><title>DB Sync</title></head><body><pre>";
 echo "Running Database Schema Update...\n";
 
 try {
-    // 1. Add auth_provider
-    $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'local' AFTER email");
-    echo "Check/Add auth_provider: OK\n";
+    // Helper to check if column exists
+    function columnExists($pdo, $table, $column) {
+        $stmt = $pdo->prepare("DESCRIBE `$table` ");
+        $stmt->execute();
+        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        return in_array($column, $columns);
+    }
+
+    // 1. Add auth_provider if missing
+    if (!columnExists($pdo, 'users', 'auth_provider')) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local' AFTER email");
+        echo "Added auth_provider column: OK\n";
+    } else {
+        echo "auth_provider column already exists: SKIP\n";
+    }
     
-    // 2. Add provider_id
-    $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id VARCHAR(255) AFTER auth_provider");
-    echo "Check/Add provider_id: OK\n";
+    // 2. Add provider_id if missing
+    if (!columnExists($pdo, 'users', 'provider_id')) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN provider_id VARCHAR(255) AFTER auth_provider");
+        echo "Added provider_id column: OK\n";
+    } else {
+        echo "provider_id column already exists: SKIP\n";
+    }
 
     // 3. Update roles ENUM to include: admin, manager, user, worker
-    // Admin: Full Access, Manager: Builder/Moderator, User: Collaborator, Worker: Execution Agent
     $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'manager', 'user', 'worker') DEFAULT 'user'");
     echo "Updated roles ENUM: OK\n";
 
     // 4. Add status column if missing
-    $pdo->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active' AFTER role");
-    echo "Check/Add status column: OK\n";
+    if (!columnExists($pdo, 'users', 'status')) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active' AFTER role");
+        echo "Added status column: OK\n";
+    } else {
+        echo "status column already exists: SKIP\n";
+    }
 
     // 5. Handle password column mismatch
-    // Check if 'password' exists, if not rename 'password_hash' to 'password'
-    $cols = $pdo->query("DESCRIBE users")->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('password', $cols) && in_array('password_hash', $cols)) {
+    if (!columnExists($pdo, 'users', 'password') && columnExists($pdo, 'users', 'password_hash')) {
         $pdo->exec("ALTER TABLE users CHANGE password_hash password VARCHAR(255) NOT NULL");
         echo "Renamed password_hash to password: OK\n";
     }
@@ -33,4 +52,5 @@ try {
 } catch (Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
 }
+echo "</pre></body></html>";
 ?>
