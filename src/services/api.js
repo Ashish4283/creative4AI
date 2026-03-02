@@ -100,3 +100,10 @@ export const getAdminDashboardStats = async () => {
 export const getUserDashboardStats = async () => {
     return await fetchWithAuth(`/user/dashboard.php`);
 };
+
+export const addUser = async (userData) => {
+    return await fetchWithAuth(`/admin/add-user.php`, {
+        method: 'POST',
+        body: JSON.stringify(userData),
+    });
+};

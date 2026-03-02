@@ -3,28 +3,31 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getAdminDashboardStats } from '../../services/api';
+import UserManagement from '../../components/dashboard/UserManagement';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    const fetchStats = async () => {
+        try {
+            const res = await getAdminDashboardStats();
+            if (res.status === 'success') {
+                setData(res.data);
+            }
+        } catch (error) {
+            console.error("Error fetching admin stats", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await getAdminDashboardStats();
-                if (res.status === 'success') {
-                    setData(res.data);
-                }
-            } catch (error) {
-                console.error("Error fetching admin stats", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchStats();
-    }, []);
+    }, [refreshTrigger]);
 
     const handleLogout = () => {
         logout();
@@ -46,12 +49,14 @@ const AdminDashboard = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center font-bold text-lg">
-                            A
+                            {user?.role === 'admin' ? 'A' : 'M'}
                         </div>
-                        <span className="font-semibold text-xl tracking-tight text-white">Admin Portal</span>
+                        <span className="font-semibold text-xl tracking-tight text-white">
+                            {user?.role === 'admin' ? 'Admin Portal' : 'Management Portal'}
+                        </span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <span className="px-3 py-1 bg-red-500/10 text-red-400 border border-red-500/20 rounded-full text-xs font-bold uppercase tracking-wider">
+                        <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full text-xs font-bold uppercase tracking-wider">
                             {user?.role}
                         </span>
                         <button onClick={handleLogout} className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
@@ -64,7 +69,7 @@ const AdminDashboard = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-10">
                     <h1 className="text-3xl font-bold mb-2">Platform Overview</h1>
-                    <p className="text-zinc-400">System metrics and recent SaaS users.</p>
+                    <p className="text-zinc-400">System metrics and user management.</p>
                 </div>
 
                 {/* Stats Grid */}
@@ -104,10 +109,18 @@ const AdminDashboard = () => {
                     </motion.div>
                 </div>
 
+                {/* User Management Section */}
+                <div className="mb-12">
+                    <UserManagement
+                        currentUserRole={user?.role}
+                        onUserAdded={() => setRefreshTrigger(prev => prev + 1)}
+                    />
+                </div>
+
                 {/* Users Table */}
                 <div className="bg-zinc-900/50 border border-white/5 rounded-2xl overflow-hidden">
                     <div className="p-6 border-b border-white/5">
-                        <h2 className="text-xl font-bold font-outfit">Recent Registrations</h2>
+                        <h2 className="text-xl font-bold font-outfit">Team Members</h2>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-zinc-800">
@@ -131,7 +144,11 @@ const AdminDashboard = () => {
                                             <div className="text-sm text-zinc-400">{usr.email}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${usr.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'}`}>
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${usr.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
+                                                    usr.role === 'manager' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                                                        usr.role === 'worker' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                                                            'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                                                }`}>
                                                 {usr.role}
                                             </span>
                                         </td>
