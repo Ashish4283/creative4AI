@@ -107,3 +107,20 @@ export const addUser = async (userData) => {
         body: JSON.stringify(userData),
     });
 };
+
+export const generateInvite = async (type, workflowId = null) => {
+    return await fetchWithAuth(`/invite/generate.php`, {
+        method: 'POST',
+        body: JSON.stringify({ type, workflow_id: workflowId }),
+    });
+};
+
+export const processInvite = async (token, method = 'POST') => {
+    if (method === 'GET') {
+        const response = await fetch(`${API_BASE_URL}/invite/process.php?token=${token}`);
+        return await response.json();
+    }
+    return await fetchWithAuth(`/invite/process.php?token=${token}`, {
+        method: 'POST'
+    });
+};

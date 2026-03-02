@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getUserDashboardStats } from '../../services/api';
+import { getUserDashboardStats, generateInvite } from '../../services/api';
 
 const UserDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [inviteLink, setInviteLink] = useState(null);
+    const [isGeneratingInvite, setIsGeneratingInvite] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -26,10 +28,29 @@ const UserDashboard = () => {
         fetchStats();
     }, []);
 
+    const handleGenerateInvite = async () => {
+        setIsGeneratingInvite(true);
+        try {
+            const res = await generateInvite('manager_invite');
+            if (res.status === 'success') {
+                setInviteLink(res.data.invite_url);
+            }
+        } catch (error) {
+            console.error("Invite Error", error);
+        } finally {
+            setIsGeneratingInvite(false);
+        }
+    };
+
     const handleLogout = () => {
         logout();
         navigate('/');
     };
+
+    const trialEnds = data?.user?.trial_ends_at;
+    const isTrialing = !data?.user?.manager_id && data?.user?.role === 'user';
+    const daysLeft = trialEnds ? Math.ceil((new Date(trialEnds) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
+    const wfLimitReached = isTrialing && (data?.stats?.total_workflows >= 1);
 
     if (isLoading) {
         return (
@@ -51,13 +72,22 @@ const UserDashboard = () => {
                         <span className="font-semibold text-xl tracking-tight">Dashboard</span>
                     </div>
                     <div className="flex items-center gap-4">
+                        {isTrialing && (
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${daysLeft > 0 ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' : 'bg-red-500/10 text-red-500 border-red-500/20'}`}>
+                                {daysLeft > 0 ? `${daysLeft} Days Left` : 'Trial Expired'}
+                            </div>
+                        )}
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => navigate('/builder')}
-                            className="px-4 py-2 bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 rounded-lg hover:bg-indigo-600 hover:text-white transition-all text-sm font-medium"
+                            whileHover={{ scale: wfLimitReached ? 1 : 1.05 }}
+                            whileTap={{ scale: wfLimitReached ? 1 : 0.95 }}
+                            onClick={() => !wfLimitReached && navigate('/builder')}
+                            disabled={wfLimitReached}
+                            className={`px-4 py-2 rounded-lg transition-all text-sm font-medium border ${wfLimitReached
+                                ? 'bg-zinc-800 text-zinc-500 border-white/5 cursor-not-allowed'
+                                : 'bg-indigo-600/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-600 hover:text-white'
+                                }`}
                         >
-                            + New Workflow
+                            {wfLimitReached ? 'Limit Reached' : '+ New Workflow'}
                         </motion.button>
                         <button onClick={handleLogout} className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">
                             Logout
@@ -67,9 +97,52 @@ const UserDashboard = () => {
             </header>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="mb-10">
-                    <h1 className="text-3xl font-bold mb-2">Welcome back, {data?.user?.name || user?.name}</h1>
-                    <p className="text-zinc-400">Here's what's happening with your workflows today.</p>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Welcome back, {data?.user?.name || user?.name}</h1>
+                        <p className="text-zinc-400">
+                            {isTrialing
+                                ? "You are currently on a 14-day free trial."
+                                : data?.user?.manager_id
+                                    ? "Account managed by your organization."
+                                    : "Individual PRO account."
+                            }
+                        </p>
+                    </div>
+                    {isTrialing && (
+                        <div className="flex items-center gap-3">
+                            <AnimatePresence mode="wait">
+                                {!inviteLink ? (
+                                    <motion.button
+                                        key="gen-btn"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={handleGenerateInvite}
+                                        disabled={isGeneratingInvite}
+                                        className="px-6 py-2.5 bg-zinc-900 border border-white/10 rounded-xl text-sm font-bold hover:bg-zinc-800 transition-colors"
+                                    >
+                                        {isGeneratingInvite ? 'Generating...' : '🔗 Share with Manager'}
+                                    </motion.button>
+                                ) : (
+                                    <motion.div
+                                        key="invite-url"
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-2 pl-4"
+                                    >
+                                        <span className="text-xs font-mono text-indigo-400 max-w-[150px] truncate">{inviteLink}</span>
+                                        <button
+                                            onClick={() => { navigator.clipboard.writeText(inviteLink); alert('Link copied!'); }}
+                                            className="bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                                        >
+                                            Copy Link
+                                        </button>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
 
                 {/* Stats Grid */}
@@ -86,6 +159,7 @@ const UserDashboard = () => {
                         </div>
                         <h3 className="text-zinc-400 font-medium text-sm mb-1">Total Workflows</h3>
                         <p className="text-4xl font-bold text-white">{data?.stats?.total_workflows || 0}</p>
+                        {isTrialing && <p className="text-[10px] text-zinc-500 mt-2 uppercase tracking-tighter">Limit: 1 Workflow</p>}
                     </motion.div>
 
                     <motion.div

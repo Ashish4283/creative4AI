@@ -738,6 +738,22 @@ const WorkflowBuilder = () => {
           <Button size="sm" variant="ghost" onClick={() => setIsHistoryOpen(true)} className="gap-2 text-muted-foreground hover:text-foreground">
             <History className="w-4 h-4" /> History
           </Button>
+          {(user?.role === 'admin' || user?.role === 'manager') && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const res = await generateInvite('agent_invite', workflowId);
+                if (res.status === 'success') {
+                  navigator.clipboard.writeText(res.data.invite_url);
+                  toast({ title: "Agent Link Copied", description: "Share this link with workers to enroll them in this workflow." });
+                }
+              }}
+              className="gap-2 border-indigo-500/30 text-indigo-400 bg-indigo-500/5 hover:bg-indigo-500 hover:text-white"
+            >
+              <Plus className="w-4 h-4" /> Invite Agents
+            </Button>
+          )}
           <Button size="sm" variant="ghost" className="h-9 w-9 p-0">
             <Settings className="w-5 h-5 text-muted-foreground" />
           </Button>
