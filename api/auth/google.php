@@ -1,6 +1,7 @@
 <?php
 require_once '../db-config.php';
-require_once '../auth-guard.php'; // We need generate_jwt from here, but wait, it's in login.php
+header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
+require_once '../auth-guard.php'; 
 
 // Duplicate generate_jwt here for now, or move it to auth-guard.php
 function generate_jwt($payload) {
