@@ -1,5 +1,7 @@
 <?php
 require_once 'db-config.php';
+require_once 'auth-guard.php';
+
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -9,7 +11,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
-// Limit payload size to 2MB (or whatever is appropriate for a huge builder JSON)
+
+// Authenticate via JWT
+$authPayload = authenticate_request();
+$userId = $authPayload['id'];
+
+// Limit payload size
 $max_size = 2 * 1024 * 1024;
 if (isset($_SERVER['CONTENT_LENGTH']) && $_SERVER['CONTENT_LENGTH'] > $max_size) {
     http_response_code(413);
@@ -27,17 +34,40 @@ try {
     exit;
   }
 
-  $userId = filter_var($data["user_id"] ?? 1, FILTER_VALIDATE_INT);
-  if ($userId === false) {
-      http_response_code(400);
-      echo json_encode(["status" => "error", "message" => "Invalid user_id."]);
-      exit;
-  }
-
   $name = htmlspecialchars(strip_tags($data["name"] ?? "Untitled Workflow"), ENT_QUOTES, 'UTF-8');
   $builderJsonString = json_encode($data["builder_json"]);
 
-  if (isset($data['id']) && !empty($data['id'])) {
+  // --- TRIAL & LIMIT CHECKS ---
+  $isInsert = !isset($data['id']) || empty($data['id']);
+
+  if ($isInsert) {
+      // Get user trial info
+      $uStmt = $pdo->prepare("SELECT role, trial_ends_at, manager_id FROM users WHERE id = :id");
+      $uStmt->execute([':id' => $userId]);
+      $userDb = $uStmt->fetch();
+
+      if ($userDb) {
+          // If role is 'user' AND has no manager -> check trial
+          if ($userDb['role'] === 'user' && empty($userDb['manager_id'])) {
+              // Check trial expiry
+              if ($userDb['trial_ends_at'] && strtotime($userDb['trial_ends_at']) < time()) {
+                  http_response_code(403);
+                  echo json_encode(["status" => "error", "message" => "Trial expired. Please contact a manager to upgrade/link your account."]);
+                  exit;
+              }
+              // Check workflow count
+              $countStmt = $pdo->prepare("SELECT COUNT(*) FROM workflows WHERE user_id = :uid");
+              $countStmt->execute([':uid' => $userId]);
+              if ($countStmt->fetchColumn() >= 1) {
+                  http_response_code(403);
+                  echo json_encode(["status" => "error", "message" => "Free trial limit reached (1 workflow max)."]);
+                  exit;
+              }
+          }
+      }
+  }
+
+  if (!$isInsert) {
       $id = filter_var($data['id'], FILTER_VALIDATE_INT);
       
       $stmt = $pdo->prepare(
@@ -48,9 +78,7 @@ try {
       $stmt->bindValue(':id', $id, PDO::PARAM_INT);
       $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
       $stmt->execute();
-
       if ($stmt->rowCount() === 0) {
-        // Might be not changed, or not found. So check existence to distinguish 404 from 200 (no rules changed)
         $check = $pdo->prepare("SELECT id FROM workflows WHERE id = :id AND user_id = :user_id");
         $check->execute([':id' => $id, ':user_id' => $userId]);
         if (!$check->fetchColumn()) {
