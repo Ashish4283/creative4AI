@@ -12,6 +12,7 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import Dashboard from './components/dashboard/Dashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
+import InvitePage from './pages/InvitePage';
 
 const App = () => {
   return (
@@ -45,6 +46,7 @@ const App = () => {
 
           {/* Public facing app route */}
           <Route path="/app" element={<UserApp />} />
+          <Route path="/invite" element={<InvitePage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
