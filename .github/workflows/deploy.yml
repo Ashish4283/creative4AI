@@ -92,3 +92,17 @@ jobs:
           local-dir: dist/
           server-dir: /public_html/
           dangerous-clean-slate: true
+
+      - name: Verify uploaded files on FTP (list site root)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          echo "Installing lftp to inspect remote files"
+          apt-get update -y
+          apt-get install -y lftp
+          echo "Listing /public_html/ (non-sensitive filenames only)"
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" -e "cls -1 /public_html/ || true; bye"
+          echo "Checking for .env at site root"
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" -e "cls -1 /public_html/.env || true; bye"
