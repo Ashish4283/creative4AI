@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 
 export default function MainLayout() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     return (
         <div className="flex bg-[#00122e] min-h-screen text-slate-100 font-inter selection:bg-primary/30">
@@ -17,8 +18,8 @@ export default function MainLayout() {
             </div>
 
             {/* Desktop Sidebar */}
-            <div className="hidden lg:flex relative z-30">
-                <Sidebar />
+            <div className={`hidden lg:flex relative z-30 transition-all duration-300 ${isSidebarCollapsed ? 'w-20' : 'w-72'}`}>
+                <Sidebar isCollapsed={isSidebarCollapsed} onCollapse={setIsSidebarCollapsed} />
             </div>
 
             {/* Mobile Sidebar Overlay */}
