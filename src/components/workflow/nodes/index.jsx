@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import BaseNode from './BaseNode';
-import { PlayCircle, Zap, FileText, Download, Box, Database, Terminal, FileSpreadsheet, Bot, Wand2, Activity, Globe, Send, Image, LayoutPanelLeft, Phone, MessageSquare, Clock, Users, GitMerge, Search } from 'lucide-react';
+import { PlayCircle, Zap, FileText, Download, Box, Database, Terminal, FileSpreadsheet, Bot, Wand2, Activity, Globe, Send, Image, LayoutPanelLeft, Phone, MessageSquare, Clock, Users, GitMerge, Search, ArrowRightLeft } from 'lucide-react';
 
 const NODE_TYPES = {
     // TRIGGERS
