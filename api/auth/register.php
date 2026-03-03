@@ -1,6 +1,6 @@
 <?php
 require_once '../db-config.php';
-header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
+// header("Cross-Origin-Opener-Policy: same-origin-allow-popups");
 header("Content-Type: application/json");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");

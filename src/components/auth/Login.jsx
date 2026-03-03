@@ -29,7 +29,7 @@ export default function Login() {
 
         if (result.success) {
             toast({ title: "Welcome back!", description: "Successfully logged in." });
-            if (result.role === 'admin') navigate('/admin');
+            if (result.role === 'admin' || result.role === 'super_admin') navigate('/admin');
             else navigate('/dashboard');
         } else {
             toast({ title: "Login Failed", description: result.message, variant: "destructive" });
@@ -42,7 +42,7 @@ export default function Login() {
         setIsLoading(false);
         if (result.success) {
             toast({ title: "Welcome!", description: "Successfully logged in with Google." });
-            if (result.role === 'admin') navigate('/admin');
+            if (result.role === 'admin' || result.role === 'super_admin') navigate('/admin');
             else navigate('/dashboard');
         } else {
             toast({ title: "Google Login Failed", description: result.message, variant: "destructive" });

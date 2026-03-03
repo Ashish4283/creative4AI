@@ -16,8 +16,9 @@ try {
     // 1. Authenticate user via JWT
     $userPayload = authenticate_request();
     
-    // 2. Allow Admin and Manager
-    require_role($userPayload, ['admin', 'manager']);
+    // 2. Allow Super Admin, Admin and Manager
+    require_role($userPayload, ['super_admin', 'admin', 'manager']);
+    $role = $userPayload['role'];
 
     // Fetch System-wide Stats
     $stats = [];
@@ -33,16 +34,33 @@ try {
     // Total Workflows
     $workflowCountStmt = $pdo->query("SELECT COUNT(*) FROM workflows");
     $stats['total_workflows'] = (int)$workflowCountStmt->fetchColumn();
+
+    // Total Organizations (Super Admin Only)
+    if ($role === 'super_admin') {
+        $orgCountStmt = $pdo->query("SELECT COUNT(*) FROM organizations");
+        $stats['total_orgs'] = (int)$orgCountStmt->fetchColumn();
+    }
     
-    // Fetch Recent SaaS Users
-    $recentUsersStmt = $pdo->query("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 50");
+    // Fetch Recent SaaS Users + Org Context
+    $recentUsersSql = "SELECT u.id, u.name, u.email, u.role, u.created_at, o.name as org_name 
+                       FROM users u 
+                       LEFT JOIN organizations o ON u.org_id = o.id 
+                       ORDER BY u.created_at DESC LIMIT 50";
+    $recentUsersStmt = $pdo->query($recentUsersSql);
     $recentUsers = $recentUsersStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $organizations = [];
+    if ($role === 'super_admin') {
+        $orgsStmt = $pdo->query("SELECT * FROM organizations ORDER BY created_at DESC");
+        $organizations = $orgsStmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     echo json_encode([
         "status" => "success",
         "data" => [
             "stats" => $stats,
-            "recent_users" => $recentUsers
+            "recent_users" => $recentUsers,
+            "organizations" => $organizations
         ]
     ]);
 

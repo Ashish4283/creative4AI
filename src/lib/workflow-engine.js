@@ -3,7 +3,7 @@ import { mediaConvertAdapter } from '../media-convert-adapter';
 
 class WorkflowEngine {
     constructor() {
-        console.log("Workflow Engine Loaded: v3.0 (N8N Expression Support + Adv. Flow)");
+        console.log("Workflow Engine Loaded: v3.0 (Advanced Logic + Flow Control)");
         this.handlers = {
             'default': async (node, inputs) => inputs,
 
@@ -12,7 +12,7 @@ class WorkflowEngine {
                 return inputs;
             },
 
-            // --- N8N-STYLE ADAPTORS & UTILS ---
+            // --- ADAPTORS & UTILS ---
 
             'webhookNode': async (node, inputs) => {
                 return { ...inputs, _trigger: 'webhook', timestamp: new Date().toISOString() };
@@ -360,7 +360,7 @@ class WorkflowEngine {
 
     resolveExpression(val, inputs) {
         if (typeof val !== 'string') return val;
-        // Handle n8n style {{expression}} or standard {{variable}}
+        // Handle reasoning expression style {{expression}} or standard {{variable}}
         const regex = /{{(.*?)}}/g;
         return val.replace(regex, (match, formula) => {
             const path = formula.trim();

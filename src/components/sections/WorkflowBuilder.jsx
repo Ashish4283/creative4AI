@@ -874,7 +874,7 @@ const WorkflowBuilder = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Publish Toggle Inspired by n8n */}
+          {/* Publish Toggle - Enterprise Ready */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/5 mr-2">
             <span className={cn("text-[10px] font-bold uppercase tracking-wider transition-colors", workflowMeta.isActive ? "text-emerald-400" : "text-slate-500")}>
               {workflowMeta.isActive ? "Active" : "Inactive"}

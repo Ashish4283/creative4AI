@@ -19,7 +19,7 @@ const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bg
                     </div>
                 </div>
 
-                {/* n8n-inspired Visual Execution Feedback */}
+                {/* Advanced Visual Execution Feedback */}
                 <div className="flex items-center">
                     {data.status === 'executing' && (
                         <div className="flex items-center gap-1.5 bg-primary/20 px-2 py-0.5 rounded-full border border-primary/30 animate-pulse">
