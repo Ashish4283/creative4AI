@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, Loader2, User, ArrowRight, Building2, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
@@ -11,7 +12,10 @@ export default function Register() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [organizationName, setOrganizationName] = useState('');
+    const [isPublicClient, setIsPublicClient] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isOrgAccount, setIsOrgAccount] = useState(false);
     const navigate = useNavigate();
     const { register, login, loginWithGoogle } = useAuth(); // Import from context
 
@@ -35,7 +39,7 @@ export default function Register() {
 
         setIsLoading(true);
 
-        const result = await register(name, email, password);
+        const result = await register(name, email, password, isOrgAccount ? organizationName : null, isPublicClient);
 
         if (result.success) {
             // Log them straight in
@@ -137,6 +141,57 @@ export default function Register() {
                         />
                     </div>
                 </div>
+
+                <div className="flex items-center gap-2 py-2">
+                    <input
+                        type="checkbox"
+                        id="isOrgAccount"
+                        checked={isOrgAccount}
+                        onChange={(e) => setIsOrgAccount(e.target.checked)}
+                        className="w-4 h-4 rounded border-slate-800 bg-slate-950 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="isOrgAccount" className="text-[11px] text-slate-400 font-bold uppercase tracking-wider cursor-pointer selection:bg-none">
+                        Registering for an Organization?
+                    </label>
+                </div>
+
+                {isOrgAccount && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 pt-2"
+                    >
+                        <div className="space-y-1.5 focus-within:text-primary transition-colors">
+                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider ml-1">Organization Name</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Building2 className="h-5 w-5 text-slate-500 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <input
+                                    type="text"
+                                    required={isOrgAccount}
+                                    className="block w-full pl-10 px-4 py-3 bg-slate-950/50 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all shadow-inner"
+                                    placeholder="Acme Corp"
+                                    value={organizationName}
+                                    onChange={(e) => setOrganizationName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                            <input
+                                type="checkbox"
+                                id="consent"
+                                checked={isPublicClient}
+                                onChange={(e) => setIsPublicClient(e.target.checked)}
+                                className="mt-1 w-4 h-4 rounded border-slate-800 bg-slate-950 text-primary focus:ring-primary"
+                            />
+                            <label htmlFor="consent" className="text-[10px] text-slate-400 leading-relaxed cursor-pointer font-medium uppercase tracking-tight">
+                                I consent to display my company logo on the homepage as a client of Reasoning Engine.
+                            </label>
+                        </div>
+                    </motion.div>
+                )}
 
                 <Button
                     type="submit"

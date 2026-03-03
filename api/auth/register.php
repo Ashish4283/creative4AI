@@ -51,18 +51,43 @@ try {
     // Hash the password securely
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
-    // Default role is 'user'
+    // Determine Role & Org
+    $org_name = isset($data["org_name"]) ? htmlspecialchars(strip_tags(trim($data["org_name"])), ENT_QUOTES, 'UTF-8') : null;
+    $is_public_client = isset($data["is_public_client"]) ? (int)$data["is_public_client"] : 0;
+    
+    $role = 'tech_user';
+    $org_id = null;
+
+    if ($org_name) {
+        $role = 'admin'; // If they provide an org name, they are the admin of that new org
+        $oStmt = $pdo->prepare("INSERT INTO organizations (name, is_public_client) VALUES (:name, :consent)");
+        $oStmt->execute([':name' => $org_name, ':consent' => $is_public_client]);
+        $org_id = $pdo->lastInsertId();
+
+        // Create initial hierarchy: Global Operations Cluster
+        $cStmt = $pdo->prepare("INSERT INTO clusters (org_id, name, description) VALUES (?, ?, ?)");
+        $cStmt->execute([$org_id, 'Global Operations', 'Primary cluster for ' . $org_name]);
+    }
+
     // Set trial to 14 days from now
     $trial_expiry = date('Y-m-d H:i:s', strtotime('+14 days'));
 
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, trial_ends_at) VALUES (:name, :email, :password_hash, 'tech_user', :trial_expiry)");
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, role, trial_ends_at, org_id) VALUES (:name, :email, :password_hash, :role, :trial_expiry, :org_id)");
     $stmt->bindValue(':name', $name, PDO::PARAM_STR);
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->bindValue(':password_hash', $password_hash, PDO::PARAM_STR);
+    $stmt->bindValue(':role', $role, PDO::PARAM_STR);
     $stmt->bindValue(':trial_expiry', $trial_expiry, PDO::PARAM_STR);
+    $stmt->bindValue(':org_id', $org_id, $org_id ? PDO::PARAM_INT : PDO::PARAM_NULL);
     $stmt->execute();
 
     $newUserId = $pdo->lastInsertId();
+
+    if ($org_id) {
+        // Link user to the auto-created cluster
+        $mStmt = $pdo->prepare("INSERT INTO cluster_members (cluster_id, user_id, role) VALUES ((SELECT id FROM clusters WHERE org_id = ? LIMIT 1), ?, 'manager')");
+        $mStmt->execute([$org_id, $newUserId]);
+    }
 
     echo json_encode([
         "status" => "success", 
@@ -71,7 +96,8 @@ try {
             "id" => $newUserId,
             "name" => $name,
             "email" => $email,
-            "role" => 'tech_user'
+            "role" => $role,
+            "org_id" => $org_id
         ]
     ]);
 

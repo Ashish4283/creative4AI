@@ -88,8 +88,23 @@ try {
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         billing_tier ENUM('free', 'pro', 'enterprise') DEFAULT 'free',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        is_public_client TINYINT(1) DEFAULT 0,
+        logo_url TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )");
+
+    $orgCols = $pdo->query("SHOW COLUMNS FROM organizations")->fetchAll(PDO::FETCH_COLUMN);
+    $orgColumnMap = [
+        'is_public_client' => "TINYINT(1) DEFAULT 0",
+        'logo_url' => "TEXT DEFAULT NULL"
+    ];
+
+    foreach ($orgColumnMap as $col => $def) {
+        if (!in_array($col, $orgCols)) {
+            $pdo->exec("ALTER TABLE organizations ADD COLUMN $col $def");
+        }
+    }
 
     // 2. Clusters (Renamed Groups)
     $pdo->exec("CREATE TABLE IF NOT EXISTS clusters (

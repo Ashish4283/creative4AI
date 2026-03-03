@@ -42,12 +42,18 @@ export const login = async (email, password) => {
     }
 };
 
-export const register = async (name, email, password) => {
+export const register = async (name, email, password, orgName = null, isPublicClient = false) => {
     try {
         const response = await fetch(`${API_BASE_URL}/auth/register.php`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({
+                name,
+                email,
+                password,
+                org_name: orgName,
+                is_public_client: isPublicClient ? 1 : 0
+            })
         });
         return await response.json();
     } catch (e) {
