@@ -20,6 +20,10 @@ const NODE_TYPES = {
     mediaConvert: { icon: Image, title: 'Media Converter', colors: { border: 'border-cyan-500', text: 'text-cyan-400', bg: 'bg-cyan-500/10', shadow: 'shadow-[0_0_15px_rgba(6,182,212,0.3)]' } },
     delayNode: { icon: Clock, title: 'Wait / Delay', colors: { border: 'border-slate-400', text: 'text-slate-300', bg: 'bg-slate-400/10', shadow: 'shadow-[0_0_15px_rgba(148,163,184,0.3)]' } },
 
+    waitNode: { icon: Clock, title: 'Wait / Delay', colors: { border: 'border-rose-500', text: 'text-rose-400', bg: 'bg-rose-500/10', shadow: 'shadow-[0_0_15px_rgba(244,63,94,0.3)]' } },
+    mergeNode: { icon: ArrowRightLeft, title: 'Merge Paths', colors: { border: 'border-cyan-500', text: 'text-cyan-400', bg: 'bg-cyan-500/10', shadow: 'shadow-[0_0_15px_rgba(6,182,212,0.3)]' } },
+    batchNode: { icon: Activity, title: 'Split In Batches', colors: { border: 'border-emerald-500', text: 'text-emerald-400', bg: 'bg-emerald-500/10', shadow: 'shadow-[0_0_15px_rgba(16,185,129,0.3)]' } },
+
     // INTEGRATIONS & OUTPUT
     httpRequestNode: { icon: Globe, title: 'HTTP Request', colors: { border: 'border-blue-500', text: 'text-blue-400', bg: 'bg-blue-500/10', shadow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]' } },
     sqlNode: { icon: Database, title: 'SQL Query', colors: { border: 'border-orange-500', text: 'text-orange-400', bg: 'bg-orange-500/10', shadow: 'shadow-[0_0_15px_rgba(249,115,22,0.3)]' } },
@@ -139,9 +143,21 @@ const WorkflowNode = ({ id, data, selected }) => {
                     </div>
                 )}
 
-                {data.type === 'delayNode' && data.seconds && (
+                {data.type === 'waitNode' && data.delay && (
                     <div className="text-[10px] text-slate-400 font-mono bg-slate-950 p-1.5 rounded border border-slate-800 flex justify-between">
-                        <span>Wait:</span> <span className="text-slate-300">{data.seconds}s</span>
+                        <span>Wait:</span> <span className="text-rose-400 font-bold">{data.delay}{data.unit?.[0] || 's'}</span>
+                    </div>
+                )}
+
+                {data.type === 'mergeNode' && data.mode && (
+                    <div className="text-[10px] text-slate-400 font-mono bg-slate-950 p-1.5 rounded border border-slate-800 flex justify-between">
+                        <span>Mode:</span> <span className="text-cyan-400 font-bold capitalize">{data.mode}</span>
+                    </div>
+                )}
+
+                {data.type === 'batchNode' && data.batchSize && (
+                    <div className="text-[10px] text-slate-400 font-mono bg-slate-950 p-1.5 rounded border border-slate-800 flex justify-between">
+                        <span>Size:</span> <span className="text-emerald-400 font-bold">{data.batchSize} items</span>
                     </div>
                 )}
 

@@ -3,7 +3,7 @@ import { mediaConvertAdapter } from '../media-convert-adapter';
 
 class WorkflowEngine {
     constructor() {
-        console.log("Workflow Engine Loaded: v2.1 (C4AI Adaptors + Auto-Backend)");
+        console.log("Workflow Engine Loaded: v3.0 (N8N Expression Support + Adv. Flow)");
         this.handlers = {
             'default': async (node, inputs) => inputs,
 
@@ -46,15 +46,8 @@ class WorkflowEngine {
             'ifNode': async (node, inputs) => {
                 const { value1, operator, value2 } = node.data;
 
-                // Dynamic Resolution: Try to resolve from inputs if {{bracketed}} or exact key match
-                const resolve = (val) => {
-                    if (typeof val !== 'string') return val;
-                    const key = val.replace(/{{|}}/g, '');
-                    return inputs[key] !== undefined ? inputs[key] : val;
-                };
-
-                const v1 = resolve(value1);
-                const v2 = resolve(value2);
+                const v1 = this.resolveExpression(value1, inputs);
+                const v2 = this.resolveExpression(value2, inputs);
 
                 let isTrue = false;
                 switch (operator) {
@@ -113,6 +106,40 @@ class WorkflowEngine {
                 // Flatten the final results from the sub-workflow (using the end node's output if possible)
                 const finalOutputs = Object.values(subResult.results).pop() || {};
                 return { ...inputs, sub_workflow_data: finalOutputs };
+            },
+
+            'waitNode': async (node, inputs) => {
+                const delay = this.resolveExpression(node.data.delay, inputs) || 5;
+                const unit = node.data.unit || 'seconds';
+                let ms = Number(delay) * 1000;
+                if (unit === 'minutes') ms *= 60;
+                if (unit === 'hours') ms *= 3600;
+
+                console.log(`[Wait] Sleeping for ${delay} ${unit}...`);
+                await new Promise(resolve => setTimeout(resolve, ms));
+                return { ...inputs, wait_completed: true };
+            },
+
+            'mergeNode': async (node, inputs) => {
+                const mode = node.data.mode || 'append';
+                console.log(`[Merge] Operating in ${mode} mode.`);
+                return inputs;
+            },
+
+            'batchNode': async (node, inputs) => {
+                const batchSize = Number(this.resolveExpression(node.data.batchSize, inputs)) || 10;
+                const items = Array.isArray(inputs.items) ? inputs.items : (inputs.data ? (Array.isArray(inputs.data) ? inputs.data : [inputs.data]) : [inputs]);
+
+                const batch = items.slice(0, batchSize);
+                const remaining = items.slice(batchSize);
+
+                console.log(`[Batch] Processing ${batch.length} items. ${remaining.length} remaining.`);
+                return {
+                    ...inputs,
+                    current_batch: batch,
+                    remaining_items: remaining,
+                    batch_completed: remaining.length === 0
+                };
             },
 
             'aiNode': async (node, inputs) => {
@@ -329,6 +356,23 @@ class WorkflowEngine {
                 }
             }
         };
+    }
+
+    resolveExpression(val, inputs) {
+        if (typeof val !== 'string') return val;
+        // Handle n8n style {{expression}} or standard {{variable}}
+        const regex = /{{(.*?)}}/g;
+        return val.replace(regex, (match, formula) => {
+            const path = formula.trim();
+            // Simple path resolution (e.g. data.customer.name)
+            const parts = path.split('.');
+            let obj = inputs;
+            for (const part of parts) {
+                if (obj && obj[part] !== undefined) obj = obj[part];
+                else return match; // Keep as is if not found
+            }
+            return obj;
+        });
     }
 
     async execute(workflowId, payload, options = {}) {

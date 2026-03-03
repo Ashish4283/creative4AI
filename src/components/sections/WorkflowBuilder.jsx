@@ -39,6 +39,9 @@ const NODE_POLICIES = {
   workflowToolNode: { required: ['workflowId'], defaults: { workflowId: '', inputMapping: {} } },
   exportNode: { required: ['destination'], defaults: { destination: 'drive', format: 'csv' } },
   mediaConvert: { required: [], defaults: { targetFormat: 'pdf' } },
+  waitNode: { required: ['delay'], defaults: { delay: 5, unit: 'seconds' } },
+  mergeNode: { required: ['mode'], defaults: { mode: 'append' } },
+  batchNode: { required: ['batchSize'], defaults: { batchSize: 10 } },
   vapiBpoNode: { required: ['agentId'], defaults: { agentId: '', agentName: 'Global Support Agent' } },
   smsNode: { required: ['to', 'message'], defaults: { to: '', message: '' } },
   delayNode: { required: ['seconds'], defaults: { seconds: 5 } },
@@ -74,7 +77,7 @@ const WorkflowBuilder = () => {
   const [future, setFuture] = useState([]);
   const [isAIPlannerOpen, setIsAIPlannerOpen] = useState(false);
   const [workflowId, setWorkflowId] = useState(() => 'wf_' + Math.random().toString(36).substr(2, 9));
-  const [workflowMeta, setWorkflowMeta] = useState({ name: 'Untitled Workflow', version: 0, environment: 'draft' });
+  const [workflowMeta, setWorkflowMeta] = useState({ name: 'Untitled Workflow', version: 0, environment: 'draft', tags: [], isActive: false });
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
   const [lastSaved, setLastSaved] = useState(null);
@@ -715,6 +718,24 @@ const WorkflowBuilder = () => {
               <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-white/5 group-focus-within:bg-primary/40 transition-colors" />
             </div>
             <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">v{workflowMeta.version}</span>
+
+            <div className="flex items-center gap-1 overflow-hidden">
+              {workflowMeta.tags?.map((tag, i) => (
+                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 truncate max-w-[80px]">{tag}</span>
+              ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 bg-white/5 hover:bg-white/10 text-slate-500"
+                onClick={() => {
+                  const tag = prompt("Enter tag name:");
+                  if (tag) setWorkflowMeta(prev => ({ ...prev, tags: [...(prev.tags || []), tag] }));
+                }}
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
+            </div>
+
             <span className={cn(
               "text-[10px] px-2 py-0.5 rounded border-2 uppercase font-black tracking-[0.1em]",
               workflowMeta.environment === 'production' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' :
@@ -727,6 +748,25 @@ const WorkflowBuilder = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Publish Toggle Inspired by n8n */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-xl border border-white/5 mr-2">
+            <span className={cn("text-[10px] font-bold uppercase tracking-wider transition-colors", workflowMeta.isActive ? "text-emerald-400" : "text-slate-500")}>
+              {workflowMeta.isActive ? "Active" : "Inactive"}
+            </span>
+            <button
+              onClick={() => setWorkflowMeta(prev => ({ ...prev, isActive: !prev.isActive }))}
+              className={cn(
+                "w-10 h-5 rounded-full relative transition-all duration-300",
+                workflowMeta.isActive ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]" : "bg-slate-700"
+              )}
+            >
+              <div className={cn(
+                "absolute top-1 w-3 h-3 rounded-full bg-white transition-all duration-300",
+                workflowMeta.isActive ? "left-6" : "left-1"
+              )} />
+            </button>
+          </div>
+
           {/* Environment Promotion Cluster */}
           <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 mr-2">
             {workflowMeta.environment === 'test' && (
@@ -794,25 +834,44 @@ const WorkflowBuilder = () => {
           <div className="p-3 space-y-6 overflow-y-auto flex-grow">
             {/* Core Logic Group */}
             <div>
-              {!isToolboxCollapsed && <h3 className="font-semibold text-xs uppercase text-muted-foreground mb-3 px-1 tracking-wider">Core Logic</h3>}
+              {!isToolboxCollapsed && <h3 className="font-semibold text-[10px] uppercase text-slate-500 mb-3 px-1 tracking-[0.2em] font-black">Core Logic</h3>}
               <div className="space-y-2">
                 {[
                   { icon: Activity, label: 'Start Trigger', type: 'default', color: 'text-slate-500' },
                   { icon: GitBranch, label: 'If / Else', type: 'ifNode', color: 'text-indigo-500' },
-                  { icon: GitMerge, label: 'Adv. Condition', type: 'conditionNode', color: 'text-sky-500' },
-                  { icon: Clock, label: 'Wait / Delay', type: 'delayNode', color: 'text-slate-400' },
-                  { icon: HardDrive, label: 'Persistent Memory', type: 'memoryNode', color: 'text-amber-500' },
+                  { icon: HardDrive, label: 'Context Memory', type: 'memoryNode', color: 'text-amber-500' },
                   { icon: Wand2, label: 'Recruit Workflow', type: 'workflowToolNode', color: 'text-violet-500' },
                 ].map((item, i) => (
                   <div
                     key={item.type}
-                    className={`p-3 bg-white dark:bg-slate-800 rounded-lg border border-border cursor-grab shadow-sm hover:shadow-md transition-all flex items-center gap-3 ${isToolboxCollapsed ? 'justify-center px-0' : ''}`}
+                    className={`p-3 bg-white dark:bg-slate-900/50 rounded-xl border border-white/5 cursor-grab shadow-sm hover:shadow-lg hover:border-primary/30 transition-all flex items-center gap-3 ${isToolboxCollapsed ? 'justify-center px-0' : ''}`}
                     onDragStart={(event) => onDragStart(event, 'workflowNode', item.label, item.type)}
                     draggable
-                    title={isToolboxCollapsed ? item.label : ''}
                   >
-                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                    {!isToolboxCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                    <item.icon className={`w-4 h-4 ${item.color}`} />
+                    {!isToolboxCollapsed && <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">{item.label}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Flow Control Group */}
+            <div>
+              {!isToolboxCollapsed && <h3 className="font-semibold text-[10px] uppercase text-slate-500 mb-3 px-1 tracking-[0.2em] font-black">Flow Control</h3>}
+              <div className="space-y-2">
+                {[
+                  { icon: Clock, label: 'Wait / Delay', type: 'waitNode', color: 'text-rose-500' },
+                  { icon: ArrowRightLeft, label: 'Merge Paths', type: 'mergeNode', color: 'text-cyan-500' },
+                  { icon: Activity, label: 'Split In Batches', type: 'batchNode', color: 'text-emerald-500' },
+                ].map((item, i) => (
+                  <div
+                    key={item.type}
+                    className={`p-3 bg-white dark:bg-slate-900/50 rounded-xl border border-white/5 cursor-grab shadow-sm hover:shadow-lg hover:border-primary/30 transition-all flex items-center gap-3 ${isToolboxCollapsed ? 'justify-center px-0' : ''}`}
+                    onDragStart={(event) => onDragStart(event, 'workflowNode', item.label, item.type)}
+                    draggable
+                  >
+                    <item.icon className={`w-4 h-4 ${item.color}`} />
+                    {!isToolboxCollapsed && <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">{item.label}</span>}
                   </div>
                 ))}
               </div>

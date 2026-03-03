@@ -98,6 +98,63 @@ export default function Inspector({ selectedNode, setNodes, setSelectedNode, nod
         handleChange(field, list);
     };
 
+    const toggleExpression = (key) => {
+        const isExpr = selectedNode.data[`_isExpr_${key}`];
+        handleChange(`_isExpr_${key}`, !isExpr);
+    };
+
+    const renderParam = (label, key, placeholder, type = 'text', options = null) => {
+        const isExpr = selectedNode.data[`_isExpr_${key}`];
+        const value = selectedNode.data[key] || '';
+
+        return (
+            <div className="space-y-1 group">
+                <div className="flex items-center justify-between">
+                    <label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{label}</label>
+                    <button
+                        onClick={() => toggleExpression(key)}
+                        className={`p-1 rounded text-[9px] font-black uppercase tracking-tighter transition-all ${isExpr ? 'bg-indigo-500 text-white shadow-[0_0_10px_rgba(99,102,241,0.4)]' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
+                        title="Toggle Expression Mode"
+                    >
+                        {isExpr ? 'Expression' : 'Fixed'}
+                    </button>
+                </div>
+
+                {isExpr ? (
+                    <div className="relative group/expr">
+                        <div className="absolute left-2 top-2 text-indigo-500"><Terminal className="w-3 h-3" /></div>
+                        <textarea
+                            className="w-full bg-slate-950 border border-indigo-500/30 rounded p-2 pl-7 text-xs font-mono text-indigo-300 focus:border-indigo-500 focus:outline-none min-h-[40px] resize-none"
+                            placeholder="{{ data.variable }}"
+                            value={value}
+                            onChange={(e) => handleChange(key, e.target.value)}
+                        />
+                    </div>
+                ) : (
+                    <>
+                        {options ? (
+                            <select
+                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:border-primary focus:outline-none"
+                                value={value}
+                                onChange={(e) => handleChange(key, e.target.value)}
+                            >
+                                {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            </select>
+                        ) : (
+                            <input
+                                type={type}
+                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:border-primary focus:outline-none"
+                                placeholder={placeholder}
+                                value={value}
+                                onChange={(e) => handleChange(key, e.target.value)}
+                            />
+                        )}
+                    </>
+                )}
+            </div>
+        );
+    };
+
     const removeListItem = (field, index) => {
         const list = [...(selectedNode.data[field] || [])];
         list.splice(index, 1);
@@ -1217,102 +1274,140 @@ export default function Inspector({ selectedNode, setNodes, setSelectedNode, nod
                             </div>
                         )}
 
-                        {/* Output: Export Node */}
+                        {selectedNode.data?.type === 'waitNode' && (
+                            <div className="space-y-4">
+                                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider flex items-center">Execution Halt <HelpTooltip text="Halt the workflow for a specific duration." /></label>
+
+                                {renderParam('Wait Time', 'delay', '5', 'number')}
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-slate-500 uppercase font-semibold">Unit</label>
+                                    <select
+                                        className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:border-rose-500 focus:outline-none"
+                                        value={selectedNode.data.unit || 'seconds'}
+                                        onChange={(e) => handleChange('unit', e.target.value)}
+                                    >
+                                        <option value="seconds">Seconds</option>
+                                        <option value="minutes">Minutes</option>
+                                        <option value="hours">Hours</option>
+                                    </select>
+                                </div>
+                                <p className="text-[10px] text-slate-500 italic">Example: Delaying a follow-up email after a lead is captured.</p>
+                            </div>
+                        )}
+
+                        {selectedNode.data?.type === 'mergeNode' && (
+                            <div className="space-y-4">
+                                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider flex items-center">Data Convergence <HelpTooltip text="Merge multiple data streams into a single flow." /></label>
+
+                                {renderParam('Merge Mode', 'mode', '', 'text', [
+                                    { value: 'append', label: 'Append (Add rows)' },
+                                    { value: 'merge', label: 'Combine (Join columns)' },
+                                    { value: 'wait', label: 'Wait (Resume when both arrive)' }
+                                ])}
+                            </div>
+                        )}
+
+                        {selectedNode.data?.type === 'batchNode' && (
+                            <div className="space-y-4">
+                                <label className="text-xs text-slate-400 uppercase font-bold tracking-wider flex items-center">Resource Optimization <HelpTooltip text="Process large datasets in smaller chunks." /></label>
+
+                                {renderParam('Batch Size', 'batchSize', '10', 'number')}
+
+                                <p className="text-[10px] text-slate-500 italic">Prevents API rate limits by processing 10 items at a time.</p>
+                            </div>
+                        )}
+
                         {selectedNode.data?.type === 'exportNode' && (
                             <div className="space-y-5">
                                 <div className="space-y-2">
                                     <label className="text-xs text-slate-400 flex items-center">Destination <HelpTooltip text="Where to send the final output." /></label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <Button variant="outline" className={`justify-start gap-2 ${selectedNode.data.destination === 'drive' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-100' : 'border-slate-800 bg-slate-900/50'}`} onClick={() => handleChange('destination', 'drive')}>
-                                            <Cloud className="w-4 h-4" /> Google Drive
-                                        </Button>
-                                        <Button variant="outline" className={`justify-start gap-2 ${selectedNode.data.destination === 'email' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-100' : 'border-slate-800 bg-slate-900/50'}`} onClick={() => handleChange('destination', 'email')}>
-                                            <Mail className="w-4 h-4" /> Email
-                                        </Button>
-                                        <Button variant="outline" className={`justify-start gap-2 col-span-2 ${selectedNode.data.destination === 'local' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-100' : 'border-slate-800 bg-slate-900/50'}`} onClick={() => handleChange('destination', 'local')}>
-                                            <Download className="w-4 h-4" /> Local Download
-                                        </Button>
+                                    <div className="flex gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
+                                        <button className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold transition-all ${selectedNode.data.destination === 'drive' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:text-slate-300'}`} onClick={() => handleChange('destination', 'drive')}>Cloud Drive</button>
+                                        <button className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold transition-all ${selectedNode.data.destination === 'email' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:text-slate-300'}`} onClick={() => handleChange('destination', 'email')}>Email</button>
+                                        <button className={`flex-1 py-1.5 px-3 rounded-md text-xs font-bold transition-all ${selectedNode.data.destination === 'download' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:text-slate-300'}`} onClick={() => handleChange('destination', 'download')}>Download</button>
                                     </div>
                                 </div>
 
-                                {selectedNode.data.destination === 'email' && (
-                                    <div className="space-y-1 animate-in fade-in">
-                                        <label className="text-xs text-slate-400">Recipient Email</label>
+                                <div className="space-y-4 pt-2 border-t border-slate-800 animate-in fade-in">
+                                    {selectedNode.data.destination === 'email' && (
+                                        <div className="space-y-1 animate-in fade-in">
+                                            <label className="text-xs text-slate-400">Recipient Email</label>
+                                            <input
+                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                                                placeholder="user@example.com"
+                                                value={selectedNode.data.emailTo || ''}
+                                                onChange={(e) => handleChange('emailTo', e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {selectedNode.data.destination === 'drive' && (
+                                        <div className="space-y-1 animate-in fade-in">
+                                            <label className="text-xs text-slate-400">Folder Path</label>
+                                            <input
+                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                                                placeholder="/Exports/Reports"
+                                                value={selectedNode.data.folderPath || ''}
+                                                onChange={(e) => handleChange('folderPath', e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-slate-400">Export Category</label>
+                                        <select
+                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                                            value={selectedNode.data.exportType || 'data'}
+                                            onChange={(e) => {
+                                                const type = e.target.value;
+                                                handleChange('exportType', type);
+                                                if (type === 'data') handleChange('format', 'csv');
+                                                if (type === 'document') handleChange('format', 'pdf');
+                                                if (type === 'media') handleChange('format', 'mp4');
+                                                if (type === 'image') handleChange('format', 'png');
+                                            }}
+                                        >
+                                            <option value="data">Data & Spreadsheets</option>
+                                            <option value="document">Documents & Text</option>
+                                            <option value="media">Media (Audio/Video)</option>
+                                            <option value="image">Images</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-slate-400">File Format</label>
+                                        <select className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500" value={selectedNode.data.format || 'csv'} onChange={(e) => handleChange('format', e.target.value)}>
+                                            <option value="auto">Auto-detect (from filename)</option>
+                                            {(selectedNode.data.exportType === 'data' || !selectedNode.data.exportType) && (
+                                                <><option value="csv">CSV (Comma Separated)</option><option value="xlsx">Excel (XLSX)</option><option value="json">JSON Data</option><option value="xml">XML</option><option value="sql">SQL Insert</option></>
+                                            )}
+                                            {selectedNode.data.exportType === 'document' && (
+                                                <><option value="pdf">PDF Document</option><option value="docx">Word Document (DOCX)</option><option value="pptx">PowerPoint (PPTX)</option><option value="txt">Plain Text (TXT)</option><option value="md">Markdown (MD)</option><option value="html">HTML Page</option></>
+                                            )}
+                                            {selectedNode.data.exportType === 'media' && (
+                                                <><option value="mp4">MP4 Video</option><option value="mp3">MP3 Audio</option><option value="wav">WAV Audio</option><option value="mov">MOV Video</option><option value="avi">AVI Video</option><option value="mkv">MKV Video</option><option value="webm">WebM Video</option><option value="flac">FLAC Audio</option><option value="ogg">OGG Audio</option></>
+                                            )}
+                                            {selectedNode.data.exportType === 'image' && (
+                                                <><option value="png">PNG Image</option><option value="jpg">JPEG Image</option><option value="gif">GIF Image</option><option value="svg">SVG Vector</option><option value="webp">WebP Image</option></>
+                                            )}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-slate-400">Output Filename</label>
                                         <input
                                             className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-                                            placeholder="user@example.com"
-                                            value={selectedNode.data.emailTo || ''}
-                                            onChange={(e) => handleChange('emailTo', e.target.value)}
+                                            placeholder="e.g. Monthly_Report_{date}"
+                                            value={selectedNode.data.filename || ''}
+                                            onChange={(e) => handleChange('filename', e.target.value)}
                                         />
                                     </div>
-                                )}
 
-                                {selectedNode.data.destination === 'drive' && (
-                                    <div className="space-y-1 animate-in fade-in">
-                                        <label className="text-xs text-slate-400">Folder Path</label>
-                                        <input
-                                            className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-                                            placeholder="/Exports/Reports"
-                                            value={selectedNode.data.folderPath || ''}
-                                            onChange={(e) => handleChange('folderPath', e.target.value)}
-                                        />
+                                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg flex items-center gap-3">
+                                        <Check className="w-4 h-4 text-emerald-500" />
+                                        <span className="text-xs text-emerald-400">Ready to export new file</span>
                                     </div>
-                                )}
-
-                                <div className="space-y-2">
-                                    <label className="text-xs text-slate-400">Export Category</label>
-                                    <select
-                                        className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-                                        value={selectedNode.data.exportType || 'data'}
-                                        onChange={(e) => {
-                                            const type = e.target.value;
-                                            handleChange('exportType', type);
-                                            // Set smart defaults when category changes
-                                            if (type === 'data') handleChange('format', 'csv');
-                                            if (type === 'document') handleChange('format', 'pdf');
-                                            if (type === 'media') handleChange('format', 'mp4');
-                                            if (type === 'image') handleChange('format', 'png');
-                                        }}
-                                    >
-                                        <option value="data">Data & Spreadsheets</option>
-                                        <option value="document">Documents & Text</option>
-                                        <option value="media">Media (Audio/Video)</option>
-                                        <option value="image">Images</option>
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs text-slate-400">File Format</label>
-                                    <select className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500" value={selectedNode.data.format || 'csv'} onChange={(e) => handleChange('format', e.target.value)}>
-                                        <option value="auto">Auto-detect (from filename)</option>
-                                        {(selectedNode.data.exportType === 'data' || !selectedNode.data.exportType) && (
-                                            <><option value="csv">CSV (Comma Separated)</option><option value="xlsx">Excel (XLSX)</option><option value="json">JSON Data</option><option value="xml">XML</option><option value="sql">SQL Insert</option></>
-                                        )}
-                                        {selectedNode.data.exportType === 'document' && (
-                                            <><option value="pdf">PDF Document</option><option value="docx">Word Document (DOCX)</option><option value="pptx">PowerPoint (PPTX)</option><option value="txt">Plain Text (TXT)</option><option value="md">Markdown (MD)</option><option value="html">HTML Page</option></>
-                                        )}
-                                        {selectedNode.data.exportType === 'media' && (
-                                            <><option value="mp4">MP4 Video</option><option value="mp3">MP3 Audio</option><option value="wav">WAV Audio</option><option value="mov">MOV Video</option><option value="avi">AVI Video</option><option value="mkv">MKV Video</option><option value="webm">WebM Video</option><option value="flac">FLAC Audio</option><option value="ogg">OGG Audio</option></>
-                                        )}
-                                        {selectedNode.data.exportType === 'image' && (
-                                            <><option value="png">PNG Image</option><option value="jpg">JPEG Image</option><option value="gif">GIF Image</option><option value="svg">SVG Vector</option><option value="webp">WebP Image</option></>
-                                        )}
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs text-slate-400">Output Filename</label>
-                                    <input
-                                        className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
-                                        placeholder="e.g. Monthly_Report_{date}"
-                                        value={selectedNode.data.filename || ''}
-                                        onChange={(e) => handleChange('filename', e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg flex items-center gap-3">
-                                    <Check className="w-4 h-4 text-emerald-500" />
-                                    <span className="text-xs text-emerald-400">Ready to export new file</span>
                                 </div>
                             </div>
                         )}

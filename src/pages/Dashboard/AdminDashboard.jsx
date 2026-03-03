@@ -280,7 +280,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-                            {['all', 'admin', 'manager', 'user'].map(r => (
+                            {['all', 'admin', 'manager', 'user', 'worker'].map(r => (
                                 <button
                                     key={r}
                                     onClick={() => setRoleFilter(r)}

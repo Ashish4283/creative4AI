@@ -185,6 +185,7 @@ const TeamHQ = () => {
                                 <thead>
                                     <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black bg-white/[0.01]">
                                         <th className="px-8 py-6">Member Identity</th>
+                                        <th className="px-8 py-6">Cluster</th>
                                         <th className="px-8 py-6">Role</th>
                                         <th className="px-8 py-6">Status</th>
                                         <th className="px-8 py-6 text-right">Settings</th>
@@ -205,8 +206,18 @@ const TeamHQ = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
+                                                {member.group_name ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                                        <span className="text-xs font-bold text-slate-300">{member.group_name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-slate-600 font-bold uppercase tracking-widest italic">Detached</span>
+                                                )}
+                                            </td>
+                                            <td className="px-8 py-6">
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${member.role === 'manager' ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
-                                                        "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                                                    "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
                                                     }`}>
                                                     {member.role}
                                                 </span>

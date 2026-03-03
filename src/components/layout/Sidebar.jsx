@@ -10,7 +10,12 @@ import {
     Shield,
     PlusCircle,
     ChevronRight,
-    User
+    User,
+    Activity,
+    LayoutTemplate,
+    Key,
+    PieChart,
+    HelpCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -43,14 +48,14 @@ export default function Sidebar() {
     const isAdmin = user?.role === 'admin' || user?.role === 'manager';
 
     const navLinks = [
-        { to: '/dashboard', icon: LayoutDashboard, label: 'Hub' },
-        { to: '/builder', icon: Workflow, label: 'Processes' },
-        { to: '/team', icon: Users, label: 'Team HQ' },
+        { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+        { to: '/builder', icon: Workflow, label: 'Workflows' },
+        { to: '/executions', icon: Activity, label: 'Executions' },
+        { to: '/templates', icon: LayoutTemplate, label: 'Templates' },
+        { to: '/credentials', icon: Key, label: 'Credentials' },
+        { to: '/team', icon: Users, label: 'Projects' },
+        { to: '/insights', icon: PieChart, label: 'Insights' },
     ];
-
-    if (isAdmin) {
-        navLinks.push({ to: '/admin', icon: Shield, label: 'Admin Console' });
-    }
 
     return (
         <aside className="w-72 flex flex-col h-screen border-r border-white/5 bg-slate-950/40 backdrop-blur-2xl relative z-40">

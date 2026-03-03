@@ -3,10 +3,6 @@ import { Handle, Position } from 'reactflow';
 import * as LucideIcons from 'lucide-react';
 
 const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bgClass, shadowClass, children, helpText }) => {
-    // Safely resolve the icon:
-    // 1. If 'icon' is a string (e.g., "Activity"), look it up in LucideIcons.
-    // 2. If it's already a component, use it.
-    // 3. Fallback to HelpCircle if nothing is found.
     const IconComponent = (typeof icon === 'string' ? LucideIcons[icon] : icon) || LucideIcons.HelpCircle;
 
     return (
@@ -22,23 +18,39 @@ const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bg
                         <p className="text-[10px] text-slate-400 font-medium">{title}</p>
                     </div>
                 </div>
-                {/* Node Status Indicator */}
-                {data.status && (
-                    <div className={`w-3 h-3 rounded-full flex-shrink-0 status-indicator ${data.status}`} title={`Status: ${data.status}`}></div>
-                )}
+
+                {/* n8n-inspired Visual Execution Feedback */}
+                <div className="flex items-center">
+                    {data.status === 'executing' && (
+                        <div className="flex items-center gap-1.5 bg-primary/20 px-2 py-0.5 rounded-full border border-primary/30 animate-pulse">
+                            <LucideIcons.Loader2 className="w-2.5 h-2.5 text-primary animate-spin" />
+                            <span className="text-[8px] font-black uppercase text-primary">Running</span>
+                        </div>
+                    )}
+                    {data.status === 'completed' && (
+                        <div className="flex items-center gap-1.5 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                            <LucideIcons.CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                            <span className="text-[8px] font-black uppercase text-emerald-400">Success</span>
+                        </div>
+                    )}
+                    {data.status === 'error' && (
+                        <div className="flex items-center gap-1.5 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
+                            <LucideIcons.XCircle className="w-2.5 h-2.5 text-rose-400" />
+                            <span className="text-[8px] font-black uppercase text-rose-400">Failed</span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Content Area */}
             <div className="p-4 bg-slate-900/60 rounded-b-xl relative overflow-hidden">
-                {/* Subtle Grid Background for content area */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, white 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-
                 <div className="relative z-10 space-y-2">
                     {children}
                 </div>
             </div>
 
-            {/* Connection Handles - Moved outside overflow-hidden to prevent clipping */}
+            {/* Handles */}
             {!data.isEntry && (
                 <Handle
                     type="target"
@@ -46,7 +58,8 @@ const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bg
                     className="w-4 h-4 !bg-slate-800 border-2 !border-slate-500 hover:!bg-slate-500 hover:scale-125 transition-all -ml-2 z-50"
                 />
             )}
-            {!data.isEnd && (
+
+            {!data.isEnd && !data.routes && (
                 <Handle
                     type="source"
                     position={Position.Right}
@@ -54,7 +67,6 @@ const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bg
                 />
             )}
 
-            {/* Custom Output Handles based on routing (e.g. ifNode) */}
             {data.routes && data.routes.map((route, i) => (
                 <Handle
                     key={route.id}
@@ -66,10 +78,9 @@ const BaseNode = ({ id, data, selected, icon, title, colorClass, borderClass, bg
                 />
             ))}
 
-            {/* Context Tooltip Hint */}
             {helpText && selected && (
                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in duration-200 z-50 flex items-center gap-1.5">
-                    <HelpCircle className="w-3 h-3" /> {helpText}
+                    <LucideIcons.HelpCircle className="w-3 h-3" /> {helpText}
                 </div>
             )}
         </div>

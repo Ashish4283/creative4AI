@@ -22,10 +22,13 @@ try {
                 u.created_at, 
                 u.trial_ends_at, 
                 u.manager_id,
+                u.group_id,
+                g.name as group_name,
                 m.name as manager_name,
                 (SELECT COUNT(*) FROM workflows WHERE user_id = u.id) as workflow_count
               FROM users u
               LEFT JOIN users m ON u.manager_id = m.id
+              LEFT JOIN user_groups g ON u.group_id = g.id
               ORDER BY u.created_at DESC";
 
     $stmt = $pdo->prepare($query);
