@@ -124,3 +124,21 @@ export const processInvite = async (token, method = 'POST') => {
         method: 'POST'
     });
 };
+
+export const listAllUsers = async () => {
+    return await fetchWithAuth(`/admin/list-all-users.php`);
+};
+
+export const updateUserRole = async (userId, role) => {
+    return await fetchWithAuth(`/admin/update-user.php`, {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, role }),
+    });
+};
+
+export const deleteUser = async (userId) => {
+    return await fetchWithAuth(`/admin/delete-user.php`, {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId }),
+    });
+};
