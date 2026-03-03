@@ -82,23 +82,38 @@ try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 
     // --- AUTO-MIGRATION V2 (MONETIZATION & ACTIVATION) ---
-    // Users Table
-    $checkUserCols = $pdo->query("SHOW COLUMNS FROM users");
-    $userCols = $checkUserCols->fetchAll(PDO::FETCH_COLUMN);
+    // 1. Users Table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NULL,
+        role ENUM('admin', 'manager', 'user', 'worker') DEFAULT 'user',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $userCols = $pdo->query("SHOW COLUMNS FROM users")->fetchAll(PDO::FETCH_COLUMN);
     
     if (!in_array('subscription_tier', $userCols)) {
         $pdo->exec("ALTER TABLE users ADD COLUMN subscription_tier ENUM('free', 'pro', 'enterprise') DEFAULT 'free'");
     }
     if (!in_array('usage_balance', $userCols)) {
-        $pdo->exec("ALTER TABLE users ADD COLUMN usage_balance INT DEFAULT 100"); // 100 free credits
+        $pdo->exec("ALTER TABLE users ADD COLUMN usage_balance INT DEFAULT 100");
     }
     if (!in_array('api_key', $userCols)) {
         $pdo->exec("ALTER TABLE users ADD COLUMN api_key VARCHAR(255) DEFAULT NULL");
     }
 
-    // Workflows Table
-    $checkWfCols = $pdo->query("SHOW COLUMNS FROM workflows");
-    $wfCols = $checkWfCols->fetchAll(PDO::FETCH_COLUMN);
+    // 2. Workflows Table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workflows (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        builder_json JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $wfCols = $pdo->query("SHOW COLUMNS FROM workflows")->fetchAll(PDO::FETCH_COLUMN);
 
     if (!in_array('is_template', $wfCols)) {
         $pdo->exec("ALTER TABLE workflows ADD COLUMN is_template TINYINT(1) DEFAULT 0");
@@ -107,24 +122,37 @@ try {
         $pdo->exec("ALTER TABLE workflows ADD COLUMN category VARCHAR(50) DEFAULT 'general'");
     }
     if (!in_array('assigned_to', $wfCols)) {
-        $pdo->exec("ALTER TABLE workflows ADD COLUMN assigned_to INT DEFAULT NULL"); // User ID of the worker/agent
+        $pdo->exec("ALTER TABLE workflows ADD COLUMN assigned_to INT DEFAULT NULL");
     }
     if (!in_array('assigned_by', $wfCols)) {
-        $pdo->exec("ALTER TABLE workflows ADD COLUMN assigned_by INT DEFAULT NULL"); // User ID of the manager
+        $pdo->exec("ALTER TABLE workflows ADD COLUMN assigned_by INT DEFAULT NULL");
     }
 
-    // Invitation Links Table
-    $checkInvCols = $pdo->query("SHOW COLUMNS FROM invitation_links");
-    $invCols = $checkInvCols->fetchAll(PDO::FETCH_COLUMN);
+    // 3. Invitation Links Table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS invitation_links (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        token VARCHAR(64) NOT NULL UNIQUE,
+        type ENUM('manager_invite', 'agent_invite') NOT NULL,
+        creator_id INT NOT NULL,
+        workflow_id INT DEFAULT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $invCols = $pdo->query("SHOW COLUMNS FROM invitation_links")->fetchAll(PDO::FETCH_COLUMN);
 
     if (!in_array('group_id', $invCols)) {
         $pdo->exec("ALTER TABLE invitation_links ADD COLUMN group_id INT DEFAULT NULL");
     }
 
-} catch (PDOException $e) {
+} catch (Exception $e) {
     http_response_code(500);
-    error_log("Database Connection Error: " . $e->getMessage()); // Log error instead of exposing it
-    echo json_encode(["status" => "error", "message" => "Database connection failed."]);
+    $msg = "Database connection failed.";
+    if (get_env_var('DEBUG_MODE') === 'true') {
+        $msg .= " Error: " . $e->getMessage();
+    }
+    error_log("Database Error: " . $e->getMessage()); 
+    echo json_encode(["status" => "error", "message" => $msg]);
     exit;
 }
 ?>
