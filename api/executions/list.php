@@ -18,12 +18,12 @@ try {
         SELECT e.*, w.name as workflow_name 
         FROM execution_logs e
         JOIN workflows w ON e.workflow_id = w.id
-        WHERE w.user_id = :uid 
-           OR w.cluster_id IN (SELECT cluster_id FROM cluster_members WHERE user_id = :uid)
+        WHERE w.user_id = :uid1 
+           OR w.cluster_id IN (SELECT cluster_id FROM cluster_members WHERE user_id = :uid2)
         ORDER BY e.created_at DESC
         LIMIT 50
     ");
-    $stmt->execute([':uid' => $userId]);
+    $stmt->execute([':uid1' => $userId, ':uid2' => $userId]);
     $logs = $stmt->fetchAll();
 
     echo json_encode(["status" => "success", "data" => $logs]);
