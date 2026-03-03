@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Settings as SettingsIcon, User, Shield, CreditCard,
     Key, RefreshCw, Zap, Save, Check, Copy, ExternalLink,
-    AlertCircle, Lock, HardDrive, Bell, Eye, EyeOff, Layout,
-    Activity, Shield, ChevronRight, Zap, Globe, ArrowRight
+    AlertTriangle, Lock, HardDrive, Bell, Eye, EyeOff, Layout,
+    Activity, ChevronRight, Globe, ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
