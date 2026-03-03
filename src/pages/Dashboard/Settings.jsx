@@ -9,7 +9,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-import { updateUserSettings } from '@/services/api';
 import { cn } from '@/lib/utils';
 
 const SettingsSection = ({ icon: Icon, title, children }) => (
