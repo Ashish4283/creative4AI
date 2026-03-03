@@ -101,6 +101,13 @@ export const getUserDashboardStats = async () => {
     return await fetchWithAuth(`/user/dashboard.php`);
 };
 
+export const updateUserSettings = async (settings) => {
+    return await fetchWithAuth(`/user/update-settings.php`, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+    });
+};
+
 export const addUser = async (userData) => {
     return await fetchWithAuth(`/admin/add-user.php`, {
         method: 'POST',

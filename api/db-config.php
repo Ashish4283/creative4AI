@@ -103,6 +103,15 @@ try {
     if (!in_array('api_key', $userCols)) {
         $pdo->exec("ALTER TABLE users ADD COLUMN api_key VARCHAR(255) DEFAULT NULL");
     }
+    if (!in_array('avatar_url', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT NULL");
+    }
+    if (!in_array('notification_prefs', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN notification_prefs JSON DEFAULT NULL");
+    }
+    if (!in_array('builder_prefs', $userCols)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN builder_prefs JSON DEFAULT NULL");
+    }
 
     // 2. Workflows Table
     $pdo->exec("CREATE TABLE IF NOT EXISTS workflows (
