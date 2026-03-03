@@ -1027,6 +1027,8 @@ const WorkflowBuilder = () => {
         {/* Canvas */}
         <div className="flex-grow relative bg-background">
           <ReactFlow
+            className="w-full h-full"
+            style={{ width: '100%', height: '100%' }}
             nodes={nodes}
             edges={edges}
             nodeTypes={nodeTypes}
