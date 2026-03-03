@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Zap, Target, MessageSquare, Code, Layout } from 'lucide-react';
+import { Zap, ArrowRight, Target, MessageSquare, Code, Layout } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import templates from '../../data/templates.json';
 
@@ -28,7 +28,7 @@ const TemplateGallery = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((tpl, idx) => {
-                const Icon = IconMap[tpl.id] || Sparkles;
+                const Icon = IconMap[tpl.id] || Zap;
                 return (
                     <motion.div
                         key={tpl.id}

@@ -145,6 +145,7 @@ try {
         'avatar_url' => "TEXT DEFAULT NULL",
         'notification_prefs' => "JSON DEFAULT NULL",
         'builder_prefs' => "JSON DEFAULT NULL",
+        'engine_prefs' => "JSON DEFAULT NULL",
         'group_id' => "INT DEFAULT NULL"
     ];
 

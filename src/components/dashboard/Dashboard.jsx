@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Workflow, Users, Activity, Plus, ArrowRight, Zap, Target, Clock, MessageSquare, Sparkles, UserPlus } from 'lucide-react';
+import { Workflow, Users, Activity, Plus, ArrowRight, Zap, Target, Clock, MessageSquare, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import StatCard from './StatCard';
@@ -106,7 +106,7 @@ export default function Dashboard() {
             <div className="space-y-6">
                 <div className="flex justify-between items-center px-4">
                     <h2 className="text-2xl font-bold font-outfit text-white flex items-center gap-3">
-                        <Sparkles className="w-6 h-6 text-primary" /> Reasoning Blueprints
+                        <Zap className="w-6 h-6 text-primary" /> Reasoning Blueprints
                     </h2>
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Scale Instantly</span>
                 </div>

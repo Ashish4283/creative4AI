@@ -12,15 +12,16 @@ import {
     ChevronRight,
     User,
     Activity,
-    LayoutTemplate,
+    Layout,
     Key,
     PieChart,
     HelpCircle,
     ChevronLeft,
     X,
-    Sparkles,
+    Zap,
     Menu,
-    Monitor
+    Monitor,
+    Building
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -69,7 +70,7 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
 
     // Tech Users see both dashboards, Agents see Production + Test for practice
     if (isTechUser || isSuperAdmin || isAdmin || isManager) {
-        mainLinks.push({ to: '/test-apps', icon: Sparkles, label: 'App Test Dashboard' });
+        mainLinks.push({ to: '/test-apps', icon: Zap, label: 'App Test Dashboard' });
     } else if (isAgent) {
         mainLinks.push({ to: '/test-apps', icon: HelpCircle, label: 'Practice (Test Apps)' });
     }
@@ -79,7 +80,7 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
     mainLinks.push({ to: '/executions', icon: Activity, label: 'Execution Logs' });
 
     if (!isAgent) {
-        mainLinks.push({ to: '/templates', icon: LayoutTemplate, label: 'Templates' });
+        mainLinks.push({ to: '/templates', icon: Layout, label: 'Templates' });
     }
 
     const mgmtLinks = [
