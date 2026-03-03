@@ -24,6 +24,20 @@ jobs:
       - name: Clean Vite cache
         run: rm -rf node_modules/.vite
 
+      - name: Create frontend .env for build
+        env:
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+        run: |
+          echo "Preparing .env for Vite build"
+          # Only write known VITE_ variables used by the app
+          > .env
+          if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then echo "VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> .env; fi
+          if [ -n "$VITE_API_BASE_URL" ]; then echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env; fi
+          if [ -n "$VITE_GEMINI_API_KEY" ]; then echo "VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY" >> .env; fi
+          echo "Created .env with client-side variables for build"
+
       - name: Build Vite app
         run: npm run build
 
