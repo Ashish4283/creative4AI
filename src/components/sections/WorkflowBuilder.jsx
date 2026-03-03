@@ -818,35 +818,35 @@ const WorkflowBuilder = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top Bar - Refined for Pro Connectivity */}
-      <div className="h-16 border-b border-white/5 flex items-center px-6 justify-between bg-card/40 backdrop-blur-xl z-20 shrink-0">
-        <div className="flex items-center gap-6">
+      <div className="h-14 border-b border-white/5 flex items-center px-4 justify-between bg-card/40 backdrop-blur-xl z-20 shrink-0 gap-2">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/dashboard')}
-            className="group flex items-center gap-2 text-slate-400 hover:text-white transition-all"
+            className="group flex items-center gap-2 text-slate-400 hover:text-white transition-all shrink-0"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-bold uppercase tracking-widest text-[10px]">Back to Hub</span>
+            <span className="font-bold uppercase tracking-widest text-[10px] hidden sm:inline">Back</span>
           </Button>
 
           <div className="h-6 w-[1px] bg-white/10" />
 
-          <div className="flex items-center gap-3">
-            <div className="relative group">
+          <div className="flex items-center gap-3 flex-1 min-w-0 overflow-x-auto">
+            <div className="relative group shrink-0">
               <input
-                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-lg px-2 py-1 text-sm font-bold text-white transition-all w-48"
+                className="bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-primary/40 rounded-lg px-2 py-1 text-sm font-bold text-white transition-all w-40"
                 value={workflowMeta.name}
                 onChange={(e) => setWorkflowMeta(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Name your engine..."
+                placeholder="Name engine..."
               />
               <div className="absolute bottom-0 left-2 right-2 h-[1px] bg-white/5 group-focus-within:bg-primary/40 transition-colors" />
             </div>
-            <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">v{workflowMeta.version}</span>
+            <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5 shrink-0">v{workflowMeta.version}</span>
 
             <div className="flex items-center gap-1 overflow-hidden">
               {workflowMeta.tags?.map((tag, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 truncate max-w-[80px]">{tag}</span>
+                <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 truncate max-w-[60px]">{tag}</span>
               ))}
               <Button
                 variant="ghost"
@@ -976,8 +976,8 @@ const WorkflowBuilder = () => {
       <div className="flex-grow flex overflow-hidden">
           {/* Toolbox */}
         <div
-          className={`border-r border-border bg-muted/30 flex flex-col transition-all duration-300 ${isToolboxCollapsed ? 'w-16' : 'w-64'}`}
-          style={isToolboxFloating ? { position: 'absolute', left: `${toolboxPos.x}px`, top: `${toolboxPos.y}px`, zIndex: 60, boxShadow: '0 20px 50px rgba(0,0,0,0.5)' } : {}}
+          className={`border-r border-border bg-muted/30 flex flex-col transition-all duration-300 ${isToolboxCollapsed ? 'w-0 md:w-16' : 'w-48 md:w-64'}`}
+          style={isToolboxFloating ? { position: 'absolute', left: `${toolboxPos.x}px`, top: `${toolboxPos.y}px`, zIndex: 60, boxShadow: '0 20px 50px rgba(0,0,0,0.5)', width: isToolboxCollapsed ? '64px' : '256px' } : {}}
         >
           <div
             className="p-2 flex justify-end border-b border-border/50 cursor-move"
@@ -1139,11 +1139,21 @@ const WorkflowBuilder = () => {
             />
             <Background variant="dots" gap={24} size={1.5} color="rgba(138, 43, 226, 0.2)" className="hero-pattern opacity-50" />
             <Panel position="top-right">
-              <div className="workflow-toolbar flex gap-2 p-2 rounded-xl bg-black/40 backdrop-blur-sm border border-white/5">
-                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.fitView({ padding: 0.12 })} title="Fit View">Fit</Button>
-                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.zoomIn()} title="Zoom In">+</Button>
-                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.zoomOut()} title="Zoom Out">−</Button>
-                <Button size="sm" variant="ghost" onClick={() => setIsInspectorVisible(v => !v)} title="Toggle Inspector">Inspector</Button>
+              <div className="workflow-toolbar flex gap-2 p-2 rounded-xl bg-slate-900/80 backdrop-blur-md border border-slate-800 shadow-xl">
+                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.fitView({ padding: 0.12 })} title="Fit View to Screen" className="hover:bg-slate-700">
+                  <span className="text-xs font-bold">Fit</span>
+                </Button>
+                <div className="w-[1px] bg-slate-700" />
+                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.zoomIn()} title="Zoom In" className="hover:bg-slate-700">+</Button>
+                <Button size="sm" variant="ghost" onClick={() => reactFlowInstance && reactFlowInstance.zoomOut()} title="Zoom Out" className="hover:bg-slate-700">−</Button>
+                <div className="w-[1px] bg-slate-700" />
+                <Button size="sm" variant="ghost" onClick={() => setIsInspectorVisible(v => !v)} title="Toggle Inspector Panel" className={`hover:bg-slate-700 ${isInspectorVisible ? 'bg-slate-700' : ''}`}>
+                  <span className="text-xs font-bold">Inspector</span>
+                </Button>
+                <div className="w-[1px] bg-slate-700" />
+                <Button size="sm" variant="ghost" onClick={() => setIsToolboxCollapsed(!isToolboxCollapsed)} title={isToolboxCollapsed ? 'Show Toolbox' : 'Hide Toolbox'} className="hover:bg-slate-700">
+                  {isToolboxCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                </Button>
               </div>
             </Panel>
           </ReactFlow>
