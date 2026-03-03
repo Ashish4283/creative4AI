@@ -338,6 +338,7 @@ const AdminDashboard = () => {
                                             </button>
                                         </th>
                                         <th className="px-8 py-6">Entity Core</th>
+                                        {user?.role === 'super_admin' && <th className="px-8 py-6 text-primary">Master Entity (Org)</th>}
                                         <th className="px-8 py-6">Intelligence Cluster</th>
                                         <th className="px-8 py-6">Access Level</th>
                                         <th className="px-8 py-6 text-right">Ops</th>
@@ -377,6 +378,16 @@ const AdminDashboard = () => {
                                                         </div>
                                                     </div>
                                                 </td>
+                                                {user?.role === 'super_admin' && (
+                                                    <td className="px-8 py-6">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-300">{u.org_id ? `Org #ID: ${u.org_id}` : 'Root Agent'}</span>
+                                                            <span className="text-[10px] text-slate-600 font-black uppercase tracking-tighter">
+                                                                {u.manager_name ? `Managed by: ${u.manager_name}` : 'Direct Enrollment'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                )}
                                                 <td className="px-8 py-6">
                                                     {u.group_id ? (
                                                         <div className="flex items-center gap-2">

@@ -18,14 +18,19 @@ const ProtectedRoute = ({ children, requiredRole }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    if (requiredRole && user?.role !== requiredRole) {
-        // If they are an admin, they can access anything
-        if (user?.role === 'admin') {
-            return children;
-        }
+    if (requiredRole) {
+        const ROLE_LEVELS = {
+            'agent': 1,
+            'tech_user': 2,
+            'manager': 3,
+            'admin': 4,
+            'super_admin': 5
+        };
 
-        // If trying to access admin area without being admin
-        if (requiredRole === 'admin' && user?.role !== 'admin') {
+        const userLevel = ROLE_LEVELS[user?.role] || 0;
+        const requiredLevel = ROLE_LEVELS[requiredRole] || 0;
+
+        if (userLevel < requiredLevel) {
             return <Navigate to="/dashboard" replace />;
         }
     }

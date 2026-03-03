@@ -51,15 +51,35 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
     const { user, logout, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
-    const isManagerOrAdmin = ['super_admin', 'admin', 'manager'].includes(user?.role);
-    const isWorker = user?.role === 'agent' || user?.role === 'tech_user';
+    const isSuperAdmin = user?.role === 'super_admin';
+    const isAdmin = user?.role === 'admin';
+    const isManager = user?.role === 'manager';
+    const isTechUser = user?.role === 'tech_user';
+    const isAgent = user?.role === 'agent';
 
     const mainLinks = [
         { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-        { to: '/builder', icon: Workflow, label: 'Workflows' },
-        { to: '/executions', icon: Activity, label: 'Executions' },
-        { to: '/templates', icon: LayoutTemplate, label: 'Templates' },
     ];
+
+    // Tech Users and higher can see/edit Workflows
+    if (!isAgent) {
+        mainLinks.push({ to: '/builder', icon: Workflow, label: 'Workflows' });
+    }
+
+    // Tech Users see both dashboards, Agents see Production + Test for practice
+    if (isTechUser || isSuperAdmin || isAdmin || isManager) {
+        mainLinks.push({ to: '/test-apps', icon: Sparkles, label: 'App Test Dashboard' });
+    } else if (isAgent) {
+        mainLinks.push({ to: '/test-apps', icon: HelpCircle, label: 'Practice (Test Apps)' });
+    }
+
+    mainLinks.push({ to: '/prod-apps', icon: AppWindow, label: 'App Production Dashboard' });
+
+    mainLinks.push({ to: '/executions', icon: Activity, label: 'Execution Logs' });
+
+    if (!isAgent) {
+        mainLinks.push({ to: '/templates', icon: LayoutTemplate, label: 'Templates' });
+    }
 
     const mgmtLinks = [
         { to: '/credentials', icon: Key, label: 'Credentials' },
@@ -154,7 +174,7 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
                     ))}
                 </div>
 
-                {isManagerOrAdmin && (
+                {(isSuperAdmin || isAdmin || isManager) && (
                     <div className="space-y-2">
                         {!isCollapsed && (
                             <div className="px-4 mb-2">
@@ -172,7 +192,7 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
                     </div>
                 )}
 
-                {!isWorker && (
+                {!isAgent && (
                     <div className="pt-2 px-4">
                         <Button
                             asChild

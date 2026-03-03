@@ -18,6 +18,8 @@ import Executions from './pages/Dashboard/Executions.jsx';
 import Credentials from './pages/Dashboard/Credentials.jsx';
 import Insights from './pages/Dashboard/Insights.jsx';
 import TemplatesPage from './pages/Dashboard/TemplatesPage.jsx';
+import TestApps from './pages/Dashboard/TestApps.jsx';
+import ProductionApps from './pages/Dashboard/ProductionApps.jsx';
 import InvitePage from './pages/InvitePage.jsx';
 import LegalPage from './pages/LegalPage.jsx';
 import MainLayout from './components/layout/MainLayout';
@@ -33,9 +35,11 @@ const App = () => {
             <Route path="/register" element={<Register />} />
           </Route>
 
-          <Route element={<ProtectedRoute requiredRole="user"><MainLayout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute requiredRole="agent"><MainLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/builder" element={<WorkflowBuilder />} />
+            <Route path="/builder" element={<ProtectedRoute requiredRole="tech_user"><WorkflowBuilder /></ProtectedRoute>} />
+            <Route path="/test-apps" element={<TestApps />} />
+            <Route path="/prod-apps" element={<ProductionApps />} />
             <Route path="/executions" element={<Executions />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/credentials" element={<Credentials />} />
@@ -58,7 +62,7 @@ const App = () => {
         </Routes>
         <Toaster />
       </BrowserRouter>
-    </AuthProvider>
+    </AuthProvider >
   );
 };
 

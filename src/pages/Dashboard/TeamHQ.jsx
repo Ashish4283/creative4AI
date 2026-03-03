@@ -164,7 +164,7 @@ const TeamHQ = () => {
                             <Button
                                 variant="outline"
                                 className="w-full justify-start gap-3 border-white/5 bg-white/5 hover:bg-white/10 rounded-xl"
-                                onClick={() => handleCreateInvite('worker_invite')}
+                                onClick={() => handleCreateInvite('agent_invite')}
                             >
                                 <Users className="w-4 h-4 text-indigo-400" />
                                 <span>Invite Agent</span>
