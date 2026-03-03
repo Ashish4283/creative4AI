@@ -169,6 +169,11 @@ export const updateCluster = async (id, name, description) => {
     });
 };
 
+// --- ANALYTICS API ---
+export const getUsageAnalytics = async () => {
+    return await fetchWithAuth(`/analytics/usage.php`);
+};
+
 export const deleteCluster = async (id) => {
     return await fetchWithAuth(`/admin/clusters.php?id=${id}`, {
         method: 'DELETE',

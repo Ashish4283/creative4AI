@@ -23,32 +23,61 @@ const SettingsSection = ({ icon: Icon, title, children }) => (
     </div>
 );
 
-const Toggle = ({ active, onToggle, label, description }) => (
-    <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all">
-        <div className="flex flex-col">
-            <span className="text-sm font-bold text-slate-200">{label}</span>
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest">{description}</span>
+const Toggle = ({ active, onToggle, label, description, help }) => (
+    <div className="group/toggle flex flex-col p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all space-y-3">
+        <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-200">{label}</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest">{description}</span>
+            </div>
+            <button
+                onClick={() => onToggle(!active)}
+                className={cn(
+                    "w-12 h-6 rounded-full transition-all relative p-1 shrink-0",
+                    active ? "bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-slate-800"
+                )}
+            >
+                <div className={cn(
+                    "w-4 h-4 bg-white rounded-full transition-all",
+                    active ? "translate-x-6" : "translate-x-0"
+                )} />
+            </button>
         </div>
-        <button
-            onClick={() => onToggle(!active)}
-            className={cn(
-                "w-12 h-6 rounded-full transition-all relative p-1",
-                active ? "bg-primary shadow-[0_0_15px_rgba(59,130,246,0.5)]" : "bg-slate-800"
-            )}
-        >
-            <div className={cn(
-                "w-4 h-4 bg-white rounded-full transition-all",
-                active ? "translate-x-6" : "translate-x-0"
-            )} />
-        </button>
+
+        {help && (
+            <div className="pt-2 border-t border-white/5">
+                <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                    <span className="font-black text-primary uppercase text-[8px] mr-1">Protocol Note:</span>
+                    {help}
+                </p>
+            </div>
+        )}
     </div>
 );
+
+import { updateUserSettings, getUsageAnalytics } from '@/services/api';
 
 const Settings = () => {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
-    const [apiKey, setApiKey] = useState(user?.api_key || 'ca_live_' + Math.random().toString(36).substr(2, 24));
+    const [usageData, setUsageData] = useState(null);
+    const [apiKey, setApiKey] = useState(user?.api_key || 'ca_live_protocol_active');
+
+    const fetchUsage = async () => {
+        try {
+            const res = await getUsageAnalytics();
+            if (res.status === 'success') {
+                setUsageData(res.data);
+            }
+        } catch (error) {
+            console.error("Usage sync error:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsage();
+    }, []);
 
     // Form States
     const [profile, setProfile] = useState({
@@ -199,18 +228,21 @@ const Settings = () => {
                                         <Toggle
                                             label="Execution Failure Alerts"
                                             description="Email notifications on critical logic errors"
+                                            help="Ensures you're alerted if a node crashes, preventing silent data holes. However, poorly optimized loops might trigger high-frequency spam."
                                             active={notifPrefs.email_errors}
                                             onToggle={(v) => { setNotifPrefs({ ...notifPrefs, email_errors: v }); handleSave({ notification_prefs: { ...notifPrefs, email_errors: v } }); }}
                                         />
                                         <Toggle
                                             label="Usage Safeguards"
                                             description="Alerts when reaching 80% quota"
+                                            help="Crucial for preventing unexpected shutdowns in production. Harmless to keep active, but might be redundant for Unlimited Enterprise plans."
                                             active={notifPrefs.email_usage}
                                             onToggle={(v) => { setNotifPrefs({ ...notifPrefs, email_usage: v }); handleSave({ notification_prefs: { ...notifPrefs, email_usage: v } }); }}
                                         />
                                         <Toggle
                                             label="Webhook Triggers"
                                             description="Allow external event listeners"
+                                            help="Expands your protocol to third-party tools (Zapier, Make). WARNING: If misconfigured, this can allow external systems to flood your reasoning queues."
                                             active={notifPrefs.webhook_triggers}
                                             onToggle={(v) => { setNotifPrefs({ ...notifPrefs, webhook_triggers: v }); handleSave({ notification_prefs: { ...notifPrefs, webhook_triggers: v } }); }}
                                         />
@@ -232,26 +264,30 @@ const Settings = () => {
                                         <Toggle
                                             label="Snap to Grid"
                                             description="Lock nodes to 20px matrix"
+                                            help="Highly recommended for architectural aesthetics. However, it may limit your ability to pack nodes densely in complex logic clusters."
                                             active={builderPrefs.snap_to_grid}
                                             onToggle={(v) => { setBuilderPrefs({ ...builderPrefs, snap_to_grid: v }); handleSave({ builder_prefs: { ...builderPrefs, snap_to_grid: v } }); }}
                                         />
                                         <Toggle
                                             label="Continuous Auto-save"
                                             description="Persist changes in real-time"
+                                            help="Ensures zero loss of logic. HARMFUL on high-latency satellite connections where every network sync causes a minor UI 'freeze'."
                                             active={builderPrefs.auto_save}
                                             onToggle={(v) => { setBuilderPrefs({ ...builderPrefs, auto_save: v }); handleSave({ builder_prefs: { ...builderPrefs, auto_save: v } }); }}
                                         />
                                         <Toggle
                                             label="Autonomous Dev Mode"
                                             description="Show raw execution JSON in inspector"
+                                            help="The ultimate tool for logic transparency. Only harm is increased visual complexity and data overhead in the browser."
                                             active={builderPrefs.dev_mode}
                                             onToggle={(v) => { setBuilderPrefs({ ...builderPrefs, dev_mode: v }); handleSave({ builder_prefs: { ...builderPrefs, dev_mode: v } }); }}
                                         />
                                         <Toggle
                                             label="High-Contrast Nodes"
                                             description="Darker workspace for focused logic"
-                                            active={builderPrefs.dark_nodes}
-                                            onToggle={(v) => { setBuilderPrefs({ ...builderPrefs, dark_nodes: v }); handleSave({ builder_prefs: { ...builderPrefs, dark_nodes: v } }); }}
+                                            help="Reduces photon emission for late-night engineering. Might obscure the difference between certain node states in bright daylight."
+                                            active={builderPrefs.high_contrast}
+                                            onToggle={(v) => { setBuilderPrefs({ ...builderPrefs, high_contrast: v }); handleSave({ builder_prefs: { ...builderPrefs, high_contrast: v } }); }}
                                         />
                                     </div>
                                 </SettingsSection>
@@ -363,11 +399,17 @@ const Settings = () => {
                             <div className="bg-black/20 rounded-2xl p-4 border border-white/10">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Resource Meter</span>
-                                    <span className="text-xs font-bold text-white">84% Capacity</span>
+                                    <span className="text-xs font-bold text-white">{usageData?.usage_meter?.percent || 0}% Capacity</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div className="h-full bg-white w-[84%] rounded-full shadow-[0_0_15px_white]" />
+                                    <div
+                                        className="h-full bg-white rounded-full shadow-[0_0_15px_white] transition-all duration-1000"
+                                        style={{ width: `${usageData?.usage_meter?.percent || 0}%` }}
+                                    />
                                 </div>
+                                <p className="mt-2 text-[8px] text-white/40 uppercase tracking-tighter">
+                                    Source: {usageData?.usage_meter?.current || 0} / {usageData?.usage_meter?.max || 0} Protocol Units
+                                </p>
                             </div>
 
                             <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
@@ -382,16 +424,23 @@ const Settings = () => {
                             <Activity className="w-4 h-4 text-emerald-400" /> Interaction Log
                         </h3>
                         <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="flex gap-3">
-                                    <div className="w-1 h-8 rounded-full bg-white/10" />
+                            {usageData?.recent_interactions?.length > 0 ? usageData.recent_interactions.map((log, i) => (
+                                <div key={i} className="flex gap-4 group/log">
+                                    <div className={`w-1 h-8 rounded-full ${log.status === 'completed' ? 'bg-emerald-500' : 'bg-rose-500'} opacity-20 group-hover/log:opacity-100 transition-opacity`} />
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] text-slate-500 uppercase font-black tracking-tighter">M{i * 3} Update</span>
-                                        <span className="text-xs text-slate-300 font-medium">Security protocol refreshed</span>
+                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">MD UPDATE</span>
+                                        <span className="text-[10px] text-slate-500 italic">
+                                            {log.status === 'completed' ? 'Reasoning cycle success' : 'Protocol failure detected'} • {log.created_at}
+                                        </span>
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <p className="text-[10px] text-slate-500 italic">No recent activity on the ledger.</p>
+                            )}
                         </div>
+                        <p className="text-[9px] text-slate-600 border-t border-white/5 pt-4 leading-relaxed">
+                            <span className="font-bold text-slate-400 uppercase">Pro Tip:</span> Interaction logs represent real-time activity. Frequent failure indicators may suggest misconfigured reasoning nodes.
+                        </p>
                     </div>
                 </div>
             </div>
