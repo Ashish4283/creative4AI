@@ -421,3 +421,9 @@
   background-color: #EF4444;
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }
+
+/* Hide side-panel toggle buttons on narrower screens */
+@media (max-width: 1280px) {
+  .inspector-toggle { display: none !important; }
+  .toolbox-collapse-button { display: none !important; }
+}

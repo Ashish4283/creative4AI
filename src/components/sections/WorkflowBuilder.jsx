@@ -157,6 +157,42 @@ const WorkflowBuilder = () => {
     }
   }, [workflowId]);
 
+  // Auto-fit canvas on resize / container change
+  useEffect(() => {
+    if (!reactFlowInstance) return;
+
+    let timer = null;
+    const handle = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        try {
+          reactFlowInstance.fitView({ padding: 0.12 });
+        } catch (e) {
+          // ignore
+        }
+      }, 180);
+    };
+
+    // Observe wrapper size changes (modern browsers)
+    let ro = null;
+    try {
+      ro = new ResizeObserver(handle);
+      if (reactFlowWrapper.current) ro.observe(reactFlowWrapper.current);
+    } catch (e) {
+      // ResizeObserver not supported; we'll fall back to window resize
+    }
+
+    window.addEventListener('resize', handle);
+    // initial fit
+    handle();
+
+    return () => {
+      window.removeEventListener('resize', handle);
+      if (ro && reactFlowWrapper.current) ro.unobserve(reactFlowWrapper.current);
+      if (timer) clearTimeout(timer);
+    };
+  }, [reactFlowInstance]);
+
   const nodeTypes = useMemo(() => ({
     workflowNode: WorkflowNode,
   }), []);
@@ -938,7 +974,7 @@ const WorkflowBuilder = () => {
         {/* Toolbox */}
         <div className={`border-r border-border bg-muted/30 flex flex-col transition-all duration-300 ${isToolboxCollapsed ? 'w-16' : 'w-64'}`}>
           <div className="p-2 flex justify-end border-b border-border/50">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setIsToolboxCollapsed(!isToolboxCollapsed)}>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 toolbox-collapse-button" onClick={() => setIsToolboxCollapsed(!isToolboxCollapsed)}>
               {isToolboxCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             </Button>
           </div>
@@ -1026,7 +1062,7 @@ const WorkflowBuilder = () => {
         </div>
 
         {/* Canvas */}
-        <div className="flex-grow relative bg-background">
+        <div ref={reactFlowWrapper} className="flex-grow relative bg-background">
           <ReactFlow
             className="w-full h-full"
             style={{ width: '100%', height: '100%' }}
@@ -1090,7 +1126,7 @@ const WorkflowBuilder = () => {
               />
             )}
             {/* Inspector toggle handle for quick access */}
-            <button onClick={() => setIsInspectorVisible(v => !v)} className="absolute left-[-42px] top-6 bg-primary text-white rounded-l-lg px-2 py-1 shadow-md hover:opacity-90">{isInspectorVisible ? '←' : '→'}</button>
+            <button onClick={() => setIsInspectorVisible(v => !v)} className="inspector-toggle absolute left-[-42px] top-6 bg-primary text-white rounded-l-lg px-2 py-1 shadow-md hover:opacity-90">{isInspectorVisible ? '←' : '→'}</button>
           </div>
 
           {/* Context Menu */}
