@@ -27,7 +27,7 @@ const TemplatesPage = () => {
     };
 
     return (
-        <div className="space-y-12 pb-20">
+        <div className="h-full overflow-y-auto p-6 lg:p-10 space-y-12 pb-20 custom-scrollbar">
             {/* Hero Hub */}
             <div className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary via-indigo-600 to-secondary p-12 md:p-20 shadow-2xl">
                 {/* Background Decoration */}
