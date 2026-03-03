@@ -14,8 +14,8 @@ $userRole = $authPayload['role'];
 
 try {
     // 1. Fetch User Metadata
-    $uStmt = $pdo->prepare("SELECT org_id FROM users WHERE id = :uid");
-    $uStmt->execute(['uid' => $userId]);
+    $uStmt = $pdo->prepare("SELECT org_id FROM users WHERE id = ?");
+    $uStmt->execute([$userId]);
     $user = $uStmt->fetch(PDO::FETCH_ASSOC);
 
     // 2. Determine Visibility
