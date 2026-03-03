@@ -3,7 +3,7 @@ import { mediaConvertAdapter } from '../media-convert-adapter';
 
 class WorkflowEngine {
     constructor() {
-        console.log("Workflow Engine Loaded: v3.0 (Advanced Logic + Flow Control)");
+        console.log("Workflow Engine Loaded: v2026.03.04-SUPERFIX (Adv. Flow)");
         this.handlers = {
             'default': async (node, inputs) => inputs,
 

@@ -41,6 +41,21 @@ jobs:
       - name: Build Vite app
         run: npm run build
 
+      - name: Add debug title and version to index.html
+        run: |
+          # Add a debug title to the <head> of index.html
+          sed -i 's|<head>|<head>\n    <title>Workflow Engine Loaded: v2026.03.04-SUPERFIX (Adv. Flow)</title>|' dist/index.html
+          # Optionally, inject a console log into the built app's main JS file if needed for runtime debug
+          # This assumes your main JS is named 'index-<hash>.js' or similar and is in 'dist/assets/'
+          # Find the main JS file (e.g., starting with 'index-' and ending with '.js')
+          MAIN_JS_FILE=$(find dist/assets -name 'index-*.js' | head -n 1)
+          if [ -n "$MAIN_JS_FILE" ]; then
+            sed -i '1s/^/console.log("Workflow Engine Loaded: v2026.03.04-SUPERFIX (Adv. Flow)");\n/' "$MAIN_JS_FILE"
+            echo "Injected debug console.log into $MAIN_JS_FILE"
+          else
+            echo "Warning: Could not find main JS file to inject console.log."
+          fi
+
       - name: Stage Backend Files to dist
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -79,9 +94,9 @@ jobs:
             set net:timeout 10
             set net:max-retries 3
             set net:reconnect-interval-base 5
-            mirror --reverse --delete-first --parallel=10 \
+            mirror --reverse --delete --parallel=10 \
                    --exclude .env --exclude .git/ --exclude .gitattributes \
-                   dist/ /public_html/
+                   dist/ .
             bye
           EOF
           echo "Deployment sync complete."
