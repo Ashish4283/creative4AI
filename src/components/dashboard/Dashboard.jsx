@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import StatCard from './StatCard';
 import TemplateGallery from './TemplateGallery';
-import { getWorkflows, getUserDashboardStats } from '@/services/api';
+import { getUserDashboardStats } from '@/services/api';
+import DelegationModal from './DelegationModal';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -13,24 +14,33 @@ export default function Dashboard() {
     const [stats, setStats] = useState({ total_workflows: 0, total_app_users: 0 });
     const [userData, setUserData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedWorkflow, setSelectedWorkflow] = useState(null);
+    const [isDelegationOpen, setIsDelegationOpen] = useState(false);
+
+    const fetchDashboardData = async () => {
+        try {
+            const response = await getUserDashboardStats();
+            if (response.status === 'success') {
+                setWorkflows(response.data.recent_workflows || []);
+                setStats(response.data.stats || {});
+                setUserData(response.data.user || {});
+            }
+        } catch (error) {
+            console.error("Dashboard workflow fetch error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const response = await getUserDashboardStats();
-                if (response.status === 'success') {
-                    setWorkflows(response.data.recent_workflows || []);
-                    setStats(response.data.stats || {});
-                    setUserData(response.data.user || {});
-                }
-            } catch (error) {
-                console.error("Dashboard workflow fetch error:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchDashboardData();
     }, []);
+
+    const handleDelegate = (e, wf) => {
+        e.stopPropagation();
+        setSelectedWorkflow(wf);
+        setIsDelegationOpen(true);
+    };
 
     const handleComingSoon = () => {
         toast({ title: "Intelligence Asset", description: "This metric is being optimized by your reasoning agents." });
@@ -143,8 +153,11 @@ export default function Dashboard() {
                                                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
                                                         Active
                                                     </span>
-                                                    {wf.assigned_to && (
-                                                        <span className="text-[9px] text-secondary font-bold uppercase tracking-tighter ml-1">Assigned to ID: {wf.assigned_to}</span>
+                                                    {wf.assigned_name && (
+                                                        <span className="text-[9px] text-primary font-black uppercase tracking-widest ml-1 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 flex items-center gap-1.5">
+                                                            <div className="w-1 h-1 rounded-full bg-primary" />
+                                                            Agent: {wf.assigned_name}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </td>
@@ -154,10 +167,7 @@ export default function Dashboard() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                navigate('/team'); // Redirect to team to assign
-                                                            }}
+                                                            onClick={(e) => handleDelegate(e, wf)}
                                                             className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 rounded-lg pr-4"
                                                         >
                                                             <UserPlus className="w-3 h-3 mr-2" /> Delegate
@@ -225,6 +235,12 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
+            <DelegationModal
+                isOpen={isDelegationOpen}
+                onClose={() => setIsDelegationOpen(false)}
+                workflow={selectedWorkflow}
+                onSuccess={fetchDashboardData}
+            />
         </div>
     );
 }

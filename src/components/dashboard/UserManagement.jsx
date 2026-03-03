@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { addUser } from '../../services/api';
+import { User, Mail, Lock, Shield, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const UserManagement = ({ currentUserRole, onUserAdded }) => {
     const [name, setName] = useState('');
@@ -22,99 +25,133 @@ const UserManagement = ({ currentUserRole, onUserAdded }) => {
         try {
             const res = await addUser({ name, email, role, password });
             if (res.status === 'success') {
-                setMessage({ type: 'success', text: 'User added successfully!' });
+                setMessage({ type: 'success', text: 'Identity successfully ingested into the workforce.' });
                 setName('');
                 setEmail('');
                 setRole('user');
                 setPassword('');
-                if (onUserAdded) onUserAdded();
+                if (onUserAdded) setTimeout(onUserAdded, 1500);
             } else {
                 setMessage({ type: 'error', text: res.message });
             }
         } catch (err) {
-            setMessage({ type: 'error', text: err.message || 'Failed to add user' });
+            setMessage({ type: 'error', text: err.message || 'Transmission failed.' });
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 backdrop-blur-sm">
-            <h2 className="text-xl font-bold mb-6 font-outfit">Invite New Member</h2>
+        <div className="glass-effect border border-white/5 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Full Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                            placeholder="John Doe"
-                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
-                        />
-                    </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Email Address</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            placeholder="john@example.com"
-                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
-                        />
-                    </div>
+            <div className="relative z-10 space-y-8">
+                <div>
+                    <h2 className="text-3xl font-black text-white tracking-tighter">Invite <span className="text-gradient">Agent</span></h2>
+                    <p className="text-slate-500 text-sm mt-1">Configure access for a new human or synthetic reasoning asset.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Initial Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            placeholder="••••••••"
-                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors"
-                        />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 group">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <User className="w-3 h-3 group-focus-within:text-primary transition-colors" /> Full Identity
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                placeholder="Legal or Synthetic Name"
+                                className="w-full bg-slate-950 border border-white/5 rounded-2xl px-5 py-4 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all font-outfit"
+                            />
+                        </div>
+                        <div className="space-y-2 group">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Mail className="w-3 h-3 group-focus-within:text-primary transition-colors" /> Communication Protocol
+                            </label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                placeholder="primary@entity.com"
+                                className="w-full bg-slate-950 border border-white/5 rounded-2xl px-5 py-4 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all font-outfit"
+                            />
+                        </div>
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Role</label>
-                        <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-500/50 transition-colors appearance-none"
-                        >
-                            {allowedRoles.map(r => (
-                                <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                            ))}
-                        </select>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 group">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Lock className="w-3 h-3 group-focus-within:text-primary transition-colors" /> Access Key
+                            </label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="Secure Entry String"
+                                className="w-full bg-slate-950 border border-white/5 rounded-2xl px-5 py-4 text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all font-outfit"
+                            />
+                        </div>
+                        <div className="space-y-2 group">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+                                <Shield className="w-3 h-3 group-focus-within:text-primary transition-colors" /> Permission Level
+                            </label>
+                            <div className="relative">
+                                <select
+                                    value={role}
+                                    onChange={(e) => setRole(e.target.value)}
+                                    className="w-full bg-slate-950 border border-white/5 rounded-2xl px-5 py-4 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all appearance-none cursor-pointer"
+                                >
+                                    {allowedRoles.map(r => (
+                                        <option key={r} value={r} className="bg-slate-900 capitalize">{r}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                    <Shield className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <AnimatePresence>
-                    {message && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className={`p-3 rounded-xl text-xs font-medium ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}
-                        >
-                            {message.text}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                    <AnimatePresence>
+                        {message && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className={cn(
+                                    "p-4 rounded-2xl flex items-center gap-4 border text-sm font-bold",
+                                    message.type === 'success'
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                )}
+                            >
+                                {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                                {message.text}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full md:w-auto px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white rounded-xl font-bold text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                >
-                    {isSubmitting ? 'Adding...' : 'Add Team Member'}
-                </button>
-            </form>
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full h-14 bg-primary hover:bg-primary/90 text-white font-black text-base rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest"
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <RefreshCw className="w-5 h-5 animate-spin" />
+                                Processing...
+                            </>
+                        ) : (
+                            "Finalize Invitation"
+                        )}
+                    </Button>
+                </form>
+            </div>
         </div>
     );
 };

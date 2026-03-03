@@ -1,0 +1,152 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+    Key, Plus, Shield, Globe, Mail, MessageSquare,
+    MoreVertical, Trash2, Edit2, Lock, ExternalLink,
+    AlertCircle, Search, RefreshCw, Eye, EyeOff
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { toast } from '@/components/ui/use-toast';
+
+const CredentialCard = ({ type, name, status, icon: Icon, color }) => {
+    const [isVisible, setIsVisible] = useState(false);
+
+    return (
+        <div className="glass-effect p-6 rounded-[2rem] border border-white/5 space-y-4 group hover:border-primary/30 transition-all duration-500 shadow-xl">
+            <div className="flex justify-between items-start">
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center border", color)}>
+                    <Icon className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-2">
+                    <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                        status === 'active' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                    )}>
+                        {status}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white rounded-lg">
+                        <MoreVertical className="w-4 h-4" />
+                    </Button>
+                </div>
+            </div>
+
+            <div>
+                <h4 className="text-white font-bold group-hover:text-primary transition-colors">{name}</h4>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">{type}</p>
+            </div>
+
+            <div className="relative group/key pt-2">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/key:opacity-100 transition-opacity">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-slate-400 hover:text-white"
+                        onClick={() => setIsVisible(!isVisible)}
+                    >
+                        {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </Button>
+                </div>
+                <div className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-[10px] font-mono text-indigo-400 overflow-hidden">
+                    {isVisible ? 'sk-proj-7a8b9c...xY2z1' : '••••••••••••••••••••••••'}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const Credentials = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const creds = [
+        { type: 'AI Provider', name: 'OpenAI Enterprise', status: 'active', icon: Key, color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+        { type: 'Messaging', name: 'Slack Production', status: 'active', icon: MessageSquare, color: 'bg-primary/10 text-primary border-primary/20' },
+        { type: 'Email Protocol', name: 'SendGrid Main', status: 'active', icon: Mail, color: 'bg-secondary/10 text-secondary border-secondary/20' },
+        { type: 'Web Service', name: 'Stripe API', status: 'active', icon: Globe, color: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' },
+        { type: 'Security', name: 'Auth0 Secret', status: 'disabled', icon: Lock, color: 'bg-slate-500/10 text-slate-500 border-slate-500/20' },
+    ];
+
+    const handleAdd = () => {
+        toast({ title: "Secure Vault Entry", description: "Protocol for new credential ingestion initialized." });
+    };
+
+    return (
+        <div className="space-y-10 pb-20">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-widest border border-primary/20">
+                            Protocol: Vault Access
+                        </span>
+                    </div>
+                    <h1 className="text-4xl font-extrabold font-outfit tracking-tight text-white mb-2">
+                        System <span className="text-gradient">Credentials</span>
+                    </h1>
+                    <p className="text-slate-400 text-lg max-w-xl">
+                        Manage the secret tokens and keys that empower your agents to interact with the world.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Button onClick={handleAdd} className="bg-primary hover:bg-primary/90 text-white font-bold rounded-2xl h-14 px-8 shadow-xl shadow-primary/20 transition-all active:scale-95 group">
+                        <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
+                        Add Credential
+                    </Button>
+                </div>
+            </div>
+
+            {/* Info Box */}
+            <div className="p-8 rounded-[2.5rem] bg-indigo-600/5 border border-indigo-500/10 flex flex-col md:flex-row gap-8 items-center">
+                <div className="w-20 h-20 rounded-[2rem] bg-indigo-500 shadow-2xl shadow-indigo-500/40 flex items-center justify-center shrink-0">
+                    <Shield className="w-10 h-10 text-white" />
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-white">Encrypted Secure Storage</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">
+                        All credentials are encrypted using industry-standard AES-256 protocols before storage.
+                        Your agents access these during execution without ever exposing the raw secret to client interfaces.
+                    </p>
+                </div>
+                <div className="md:ml-auto">
+                    <Button variant="ghost" className="text-indigo-400 font-bold gap-2">
+                        View Audit Log <ExternalLink className="w-4 h-4" />
+                    </Button>
+                </div>
+            </div>
+
+            {/* Grid & Filter */}
+            <div className="space-y-8">
+                <div className="flex flex-col md:flex-row gap-4 justify-between items-center group">
+                    <div className="relative flex-1 w-full group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Find specific protocol key..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-slate-950 border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all font-medium text-white shadow-xl"
+                        />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {creds.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((cred, idx) => (
+                        <CredentialCard key={idx} {...cred} />
+                    ))}
+
+                    {/* Add Placeholder */}
+                    <button
+                        onClick={handleAdd}
+                        className="group flex flex-col items-center justify-center p-6 border-2 border-dashed border-white/5 rounded-[2rem] hover:border-primary/40 hover:bg-primary/5 transition-all duration-500 py-12 space-y-4"
+                    >
+                        <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-primary/10 transition-colors">
+                            <Plus className="w-8 h-8 text-slate-600 group-hover:text-primary transition-colors" />
+                        </div>
+                        <span className="text-slate-500 font-black uppercase tracking-widest text-[10px] group-hover:text-primary transition-colors">Ingest New Secret</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Credentials;

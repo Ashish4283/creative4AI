@@ -27,14 +27,12 @@ try {
     $stats['total_workflows'] = (int)$wfCountStmt->fetchColumn();
     
     // Total App Users who interacted with this user's workflows
-    // Assuming you have created the app_users table from the schema.sql
     try {
         $appUserCountStmt = $pdo->prepare("SELECT COUNT(*) FROM app_users WHERE saas_user_id = :user_id");
         $appUserCountStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $appUserCountStmt->execute();
         $stats['total_app_users'] = (int)$appUserCountStmt->fetchColumn();
     } catch (PDOException $e) {
-        // Fallback if app_users table isn't created yet or other DB error
         $stats['total_app_users'] = 0; 
     }
 
@@ -43,6 +41,18 @@ try {
     $userStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
     $userStmt->execute();
     $userData = $userStmt->fetch(PDO::FETCH_ASSOC);
+
+    // Recent Workflows (Owned or Assigned)
+    // Join with users to get the name of the person assigned to the workflow
+    $wfQuery = "SELECT w.id, w.name, w.updated_at, w.assigned_to, u.name as assigned_name 
+                FROM workflows w 
+                LEFT JOIN users u ON w.assigned_to = u.id
+                WHERE w.user_id = :user_id OR w.assigned_to = :user_id 
+                ORDER BY w.updated_at DESC LIMIT 5";
+    $wfStmt = $pdo->prepare($wfQuery);
+    $wfStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+    $wfStmt->execute();
+    $recentWorkflows = $wfStmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         "status" => "success",

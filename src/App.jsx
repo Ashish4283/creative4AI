@@ -14,6 +14,10 @@ import Dashboard from './components/dashboard/Dashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard.jsx';
 import TeamHQ from './pages/Dashboard/TeamHQ.jsx';
 import Settings from './pages/Dashboard/Settings.jsx';
+import Executions from './pages/Dashboard/Executions.jsx';
+import Credentials from './pages/Dashboard/Credentials.jsx';
+import Insights from './pages/Dashboard/Insights.jsx';
+import TemplatesPage from './pages/Dashboard/TemplatesPage.jsx';
 import InvitePage from './pages/InvitePage.jsx';
 import MainLayout from './components/layout/MainLayout';
 
@@ -31,8 +35,12 @@ const App = () => {
           <Route element={<ProtectedRoute requiredRole="user"><MainLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/builder" element={<WorkflowBuilder />} />
-            <Route path="/team" element={<ProtectedRoute role="manager"><TeamHQ /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/executions" element={<Executions />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/credentials" element={<Credentials />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/team" element={<TeamHQ />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredRole="admin"><MainLayout /></ProtectedRoute>}>
