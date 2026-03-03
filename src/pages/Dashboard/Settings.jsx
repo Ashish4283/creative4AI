@@ -58,7 +58,7 @@ const Toggle = ({ active, onToggle, label, description, help }) => (
 import { updateUserSettings, getUsageAnalytics } from '@/services/api';
 
 const Settings = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
     const [isSaving, setIsSaving] = useState(false);
     const [usageData, setUsageData] = useState(null);
@@ -90,14 +90,24 @@ const Settings = () => {
         email_errors: true,
         email_usage: true,
         browser_alerts: false,
-        webhook_triggers: true
+        webhook_triggers: true,
+        ...user?.notification_prefs
     });
 
     const [builderPrefs, setBuilderPrefs] = useState({
         snap_to_grid: true,
         auto_save: true,
         dev_mode: false,
-        dark_nodes: true
+        dark_nodes: true,
+        ...user?.builder_prefs
+    });
+
+    const [enginePrefs, setEnginePrefs] = useState({
+        strict_mode: true,
+        parallel_execution: false,
+        simulated_latency: 0,
+        verbose_logging: true,
+        ...user?.engine_prefs
     });
 
     const handleSave = async (data) => {
@@ -105,6 +115,7 @@ const Settings = () => {
         try {
             const res = await updateUserSettings(data);
             if (res.status === 'success') {
+                updateUser(data); // Sync to global state
                 toast({ title: "Protocol Synchronized", description: "Global configuration updated successfully." });
             }
         } catch (err) {
@@ -145,8 +156,9 @@ const Settings = () => {
                 {[
                     { id: 'profile', icon: User, label: 'Core Identity' },
                     { id: 'preferences', icon: Layout, label: 'Builder Prefs' },
+                    { id: 'engine', icon: Zap, label: 'System Protocol' },
                     { id: 'security', icon: Shield, label: 'Security' },
-                    { id: 'monetization', icon: Zap, label: 'Plan & Usage' }
+                    { id: 'monetization', icon: CreditCard, label: 'Plan & Usage' }
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -318,6 +330,61 @@ const Settings = () => {
                             </motion.div>
                         )}
 
+                        {activeTab === 'engine' && (
+                            <motion.div
+                                key="engine"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                <SettingsSection title="Logic Matrix Constraints" icon={Zap}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Toggle
+                                            label="Strict Execution Mode"
+                                            description="Halt workflow on any node failure"
+                                            help="Ensures data integrity. If a node fails, the entire reasoning chain stops immediately. Harmless for mission-critical tasks; annoying for broad web searches."
+                                            active={enginePrefs.strict_mode}
+                                            onToggle={(v) => { setEnginePrefs({ ...enginePrefs, strict_mode: v }); handleSave({ engine_prefs: { ...enginePrefs, strict_mode: v } }); }}
+                                        />
+                                        <Toggle
+                                            label="Parallel Reasoning"
+                                            description="Execute independent nodes simultaneously"
+                                            help="Massively increases speed. WARNING: Can cause race conditions if multiple nodes attempt to update the same memory key at once."
+                                            active={enginePrefs.parallel_execution}
+                                            onToggle={(v) => { setEnginePrefs({ ...enginePrefs, parallel_execution: v }); handleSave({ engine_prefs: { ...enginePrefs, parallel_execution: v } }); }}
+                                        />
+                                        <Toggle
+                                            label="Verbose Intelligence Logging"
+                                            description="Save detailed debug logs for every step"
+                                            help="Essential for debugging complex flows. HARMFUL for performance as it increases database write frequency by 500%."
+                                            active={enginePrefs.verbose_logging}
+                                            onToggle={(v) => { setEnginePrefs({ ...enginePrefs, verbose_logging: v }); handleSave({ engine_prefs: { ...enginePrefs, verbose_logging: v } }); }}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-bold text-slate-200 uppercase tracking-tighter">Deep Thinking Delay (Latency)</span>
+                                                <span className="text-[10px] text-slate-500 font-mono italic">Add {enginePrefs.simulated_latency}ms delay between node executions</span>
+                                            </div>
+                                            <span className="text-primary font-black text-xl">{enginePrefs.simulated_latency}ms</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="5000"
+                                            step="100"
+                                            value={enginePrefs.simulated_latency}
+                                            onChange={(e) => setEnginePrefs({ ...enginePrefs, simulated_latency: parseInt(e.target.value) })}
+                                            onMouseUp={() => handleSave({ engine_prefs: enginePrefs })}
+                                            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary"
+                                        />
+                                    </div>
+                                </SettingsSection>
+                            </motion.div>
+                        )}
                         {activeTab === 'security' && (
                             <motion.div
                                 key="security"
@@ -368,6 +435,31 @@ const Settings = () => {
                                             </div>
                                             <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase border border-emerald-500/20">Active Now</span>
                                         </div>
+                                    </div>
+                                </SettingsSection>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'monetization' && (
+                            <motion.div
+                                key="monetization"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                <SettingsSection title="Subscription Matrix" icon={CreditCard}>
+                                    <div className="flex flex-col items-center justify-center py-10 space-y-6">
+                                        <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center border border-primary/20">
+                                            <Sparkles className="w-10 h-10 text-primary" />
+                                        </div>
+                                        <div className="text-center space-y-2">
+                                            <h4 className="text-xl font-bold text-white">Advanced Tier Active</h4>
+                                            <p className="text-slate-500 text-sm">You are currently running on the Elite Reasoning Protocol.</p>
+                                        </div>
+                                        <Button className="bg-white/5 hover:bg-white/10 text-white rounded-2xl px-8 h-12 font-bold border border-white/5">
+                                            Manage Ledger
+                                        </Button>
                                     </div>
                                 </SettingsSection>
                             </motion.div>

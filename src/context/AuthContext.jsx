@@ -74,6 +74,12 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('saas_user');
     };
 
+    const updateUser = (updatedData) => {
+        const newUser = { ...user, ...updatedData };
+        setUser(newUser);
+        localStorage.setItem('saas_user', JSON.stringify(newUser));
+    };
+
     const value = {
         user,
         token,
@@ -81,6 +87,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!token,
         login,
         register,
+        updateUser,
         loginWithGoogle,
         logout
     };

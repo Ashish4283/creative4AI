@@ -335,13 +335,15 @@ export class NodeFSAdapter extends StorageAdapter {
 export class ApiAdapter extends StorageAdapter {
     async saveWorkflow(id, workflowJson, userId = 1) {
         try {
-            // Is id an integer?
-            const isNumericId = !isNaN(parseInt(id)) && isFinite(id);
+            // Improved ID detection: IDs from DB are always numeric strings or integers
+            const isNumericId = id && /^\d+$/.test(String(id));
+
             const payload = {
                 user_id: userId,
                 name: workflowJson.name || 'Untitled Workflow',
                 builder_json: workflowJson
             };
+
             if (isNumericId) {
                 payload.id = parseInt(id, 10);
             }

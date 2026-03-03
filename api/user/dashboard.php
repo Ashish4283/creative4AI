@@ -36,8 +36,8 @@ try {
         $stats['total_app_users'] = 0; 
     }
 
-    // Fetch user basic info + monetization metrics
-    $userStmt = $pdo->prepare("SELECT name, email, role, subscription_tier, usage_balance FROM users WHERE id = :user_id");
+    // Fetch user basic info + monetization metrics + prefs
+    $userStmt = $pdo->prepare("SELECT name, email, role, subscription_tier, usage_balance, notification_prefs, builder_prefs, engine_prefs FROM users WHERE id = :user_id");
     $userStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
     $userStmt->execute();
     $userData = $userStmt->fetch(PDO::FETCH_ASSOC);

@@ -141,7 +141,7 @@ export default function Dashboard() {
                                 <tbody>
                                     {workflows.map((wf) => (
                                         <tr key={wf.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-all group cursor-pointer">
-                                            <td className="px-8 py-6" onClick={() => navigate('/builder')}>
+                                            <td className="px-8 py-6" onClick={() => navigate(`/builder?id=${wf.id}`)}>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-slate-100 group-hover:text-primary transition-colors text-base">{wf.name || 'Untitled Workflow'}</span>
                                                     <span className="text-xs text-slate-500 mt-0.5">ID: {wf.id}</span>
@@ -173,7 +173,7 @@ export default function Dashboard() {
                                                             <UserPlus className="w-3 h-3 mr-2" /> Delegate
                                                         </Button>
                                                     )}
-                                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-primary/10 hover:text-primary transition-all" onClick={() => navigate('/builder')}>
+                                                    <Button variant="ghost" className="h-10 w-10 p-0 rounded-full hover:bg-primary/10 hover:text-primary transition-all" onClick={() => navigate(`/builder?id=${wf.id}`)}>
                                                         <ArrowRight className="w-5 h-5" />
                                                     </Button>
                                                 </div>

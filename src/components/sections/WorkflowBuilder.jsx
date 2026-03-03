@@ -76,11 +76,15 @@ const WorkflowBuilder = () => {
   const [past, setPast] = useState([]);
   const [future, setFuture] = useState([]);
   const [isAIPlannerOpen, setIsAIPlannerOpen] = useState(false);
-  const [workflowId, setWorkflowId] = useState(() => 'wf_' + Math.random().toString(36).substr(2, 9));
+  const [workflowId, setWorkflowId] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('id') || 'wf_' + Math.random().toString(36).substr(2, 9);
+  });
   const [workflowMeta, setWorkflowMeta] = useState({ name: 'Untitled Workflow', version: 0, environment: 'draft', tags: [], isActive: false });
   const [isLoadModalOpen, setIsLoadModalOpen] = useState(false);
   const [savedWorkflows, setSavedWorkflows] = useState([]);
   const [lastSaved, setLastSaved] = useState(null);
+  const [isDraftDirty, setIsDraftDirty] = useState(false); // New: track unsaved changes
   const [storageMode, setStorageMode] = useState('browser');
   const [contextMenu, setContextMenu] = useState(null);
   const [clipBoard, setClipBoard] = useState([]);
@@ -89,6 +93,7 @@ const WorkflowBuilder = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCodeViewOpen, setIsCodeViewOpen] = useState(false);
   const [codeViewContent, setCodeViewContent] = useState('');
+  const [logs, setLogs] = useState([]);
   const isJustLoaded = useRef(false);
 
   useEffect(() => {
@@ -109,6 +114,47 @@ const WorkflowBuilder = () => {
       }
     }
   }, []);
+
+  // --- DRAFT RECOVERY PROTOCOL ---
+  useEffect(() => {
+    if (!workflowId) return;
+
+    const draftKey = `draft_history_${workflowId}`;
+    const draftData = localStorage.getItem(draftKey);
+
+    if (draftData) {
+      try {
+        const draft = JSON.parse(draftData);
+        // Show toast if draft found
+        toast({
+          title: "Draft Detected",
+          description: "Unsynced changes found in local protocol.",
+          action: (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => {
+                setNodes(draft.nodes || []);
+                setEdges(draft.edges || []);
+                setWorkflowMeta(prev => ({
+                  ...prev,
+                  name: draft.name,
+                  version: draft.version,
+                  tags: draft.tags || [],
+                  isActive: draft.isActive || false
+                }));
+                setIsDraftDirty(true);
+              }}
+            >
+              Restore
+            </Button>
+          ),
+        });
+      } catch (e) {
+        console.error("Draft recovery failure:", e);
+      }
+    }
+  }, [workflowId]);
 
   const nodeTypes = useMemo(() => ({
     workflowNode: WorkflowNode,
@@ -451,10 +497,15 @@ const WorkflowBuilder = () => {
       };
 
       // 4. Execute
+      // Execute with real user settings
+      setLogs([]); // Clear previous logs
       const resultContext = await workflowEngine.execute(workflowId, payload, {
-        onLog: (entry) => {
-          console.log(`[Engine] ${entry.message}`);
-        }
+        userId: user?.id,
+        onLog: (l) => {
+          console.log(`[Engine] ${l.message}`);
+          setLogs(prev => [...prev, l]);
+        },
+        config: user?.engine_prefs || {}
       });
 
       // 5. Update UI with Results
@@ -537,7 +588,7 @@ const WorkflowBuilder = () => {
   };
 
   const handleSave = async (isAutosave = false) => {
-    // Determine new version: Increment on manual save, keep current on autosave
+    // Determine new version: Increment ONLY on manual save if user wants versioning, or keep existing for update
     const currentVersion = Number(workflowMeta.version) || 0;
     const newVersion = isAutosave ? currentVersion : currentVersion + 1;
 
@@ -551,21 +602,49 @@ const WorkflowBuilder = () => {
     };
 
     try {
-      const savedData = await storageAdapter.saveWorkflow(workflowId, workflowData);
+      if (isAutosave) {
+        // --- TEMP HISTORY PROTOCOL (Browser Cache) ---
+        // We save to a specific "draft" key in localStorage to avoid DB bloat
+        const draftKey = `draft_history_${workflowId}`;
+        localStorage.setItem(draftKey, JSON.stringify({
+          ...workflowData,
+          draftAt: new Date().toISOString()
+        }));
+        setLastSaved(new Date());
+        setIsDraftDirty(true);
+        return;
+      }
+
+      // --- PERSISTENCE PROTOCOL (Database/FileSystem) ---
+      // Force API adapter for manual saves to ensure it hits the DB
+      const result = await storageAdapter.setApi().saveWorkflow(workflowId, workflowData, user?.id);
+
+      // CRITICAL: Update the workflowId to the one returned by the DB (which will be numeric)
+      // This ensures subsequent saves update the same row instead of inserting new ones
+      if (result.id && result.id !== workflowId) {
+        setWorkflowId(result.id);
+        // Update URL without reloading
+        window.history.replaceState(null, '', `?id=${result.id}`);
+        // Clean up draft since it's now synced
+        localStorage.removeItem(`draft_history_${workflowId}`);
+      }
 
       setWorkflowMeta(prev => ({ ...prev, version: newVersion }));
       setLastSaved(new Date());
+      setIsDraftDirty(false);
 
-      if (!isAutosave) {
-        toast({ title: "Workflow Saved", description: `Version ${newVersion} stored locally.` });
-      }
+      toast({
+        title: "Protocol Synced",
+        description: `Workflow "${workflowMeta.name}" version ${newVersion} is now live in the master ledger.`
+      });
+
     } catch (error) {
       console.error("Save failed:", error);
-      toast({ title: "Save Failed", description: error.message, variant: "destructive" });
+      toast({ title: "Sync Failure", description: error.message, variant: "destructive" });
     }
   };
 
-  // Autosave
+  // Autosave Logic (2s Debounce)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isJustLoaded.current) {
@@ -573,9 +652,9 @@ const WorkflowBuilder = () => {
         return;
       }
       if (nodes.length > 0) {
-        handleSave(true);
+        handleSave(true); // Trigger Autosave (LocalStorage Only)
       }
-    }, 2000); // 2s debounce
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [nodes, edges, workflowMeta.name]);
@@ -811,9 +890,35 @@ const WorkflowBuilder = () => {
             <Play className="w-4 h-4 fill-current" /> Execute
           </Button>
 
-          <Button size="sm" variant="outline" onClick={() => handleSave(false)} className="h-9 px-4 rounded-xl border-white/10 text-white font-bold hover:bg-white/5 transition-all">
-            <Save className="w-4 h-4 mr-2" /> Save
-          </Button>
+          <div className="w-[1px] h-6 bg-white/5 mx-1" />
+
+          {/* SYNC CLUSTER */}
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => handleSave(false)}
+              className={cn(
+                "h-10 px-6 rounded-xl gap-2 font-bold shadow-xl transition-all active:scale-95 group",
+                isDraftDirty ? "bg-primary hover:bg-primary/90 text-white shadow-primary/20" : "bg-white/5 hover:bg-white/10 text-slate-400 border border-white/5"
+              )}
+            >
+              <Save className={cn("w-4 h-4", isDraftDirty && "animate-pulse")} />
+              {isDraftDirty ? "Sync to DB" : "Synced"}
+            </Button>
+
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1">
+                <Cloud className={cn("w-3 h-3", isDraftDirty ? "text-amber-500" : "text-emerald-500")} />
+                <span className="text-[9px] font-black uppercase text-slate-500 whitespace-nowrap leading-none">
+                  {isDraftDirty ? "Unsynced Draft" : "Ledger Accurate"}
+                </span>
+              </div>
+              {lastSaved && (
+                <span className="text-[8px] text-slate-600 font-mono italic leading-none mt-1">
+                  Node Sync: {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
 
           <div className="w-[1px] h-6 bg-white/5 mx-1" />
 
@@ -1019,121 +1124,127 @@ const WorkflowBuilder = () => {
       />
 
       {/* Code View Modal */}
-      {isCodeViewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-              <div className="flex items-center gap-2">
-                <FileCode className="w-5 h-5 text-blue-400" />
-                <div>
-                  <h3 className="font-semibold text-slate-200">Workflow Source Code (Editable)</h3>
-                  <p className="text-xs text-slate-500">Edit the JSON below to manually fix or update your workflow.</p>
+      {
+        isCodeViewOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
+              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                <div className="flex items-center gap-2">
+                  <FileCode className="w-5 h-5 text-blue-400" />
+                  <div>
+                    <h3 className="font-semibold text-slate-200">Workflow Source Code (Editable)</h3>
+                    <p className="text-xs text-slate-500">Edit the JSON below to manually fix or update your workflow.</p>
+                  </div>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => setIsCodeViewOpen(false)} className="h-8 w-8 text-slate-400 hover:text-white"><X className="w-4 h-4" /></Button>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setIsCodeViewOpen(false)} className="h-8 w-8 text-slate-400 hover:text-white"><X className="w-4 h-4" /></Button>
-            </div>
-            <div className="flex-grow overflow-hidden relative bg-slate-950 p-0 group">
-              <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button size="sm" variant="secondary" className="gap-2 shadow-lg" onClick={() => {
-                  navigator.clipboard.writeText(codeViewContent);
-                  toast({ title: "Copied to Clipboard", description: "Ready to paste into your AI assistant." });
-                }}>
-                  <Copy className="w-4 h-4" /> Copy
-                </Button>
-                <Button size="sm" className="gap-2 shadow-lg bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
-                  try {
-                    const data = JSON.parse(codeViewContent);
-                    recordHistory();
-                    if (data.id) setWorkflowId(data.id);
-                    setWorkflowMeta({
-                      name: data.name || workflowMeta.name,
-                      version: data.version || workflowMeta.version,
-                      environment: data.environment || 'draft'
-                    });
-                    setNodes(data.nodes || []);
-                    setEdges(data.edges || []);
-                    if (data.viewport && reactFlowInstance) {
-                      reactFlowInstance.setViewport(data.viewport);
+              <div className="flex-grow overflow-hidden relative bg-slate-950 p-0 group">
+                <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="sm" variant="secondary" className="gap-2 shadow-lg" onClick={() => {
+                    navigator.clipboard.writeText(codeViewContent);
+                    toast({ title: "Copied to Clipboard", description: "Ready to paste into your AI assistant." });
+                  }}>
+                    <Copy className="w-4 h-4" /> Copy
+                  </Button>
+                  <Button size="sm" className="gap-2 shadow-lg bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
+                    try {
+                      const data = JSON.parse(codeViewContent);
+                      recordHistory();
+                      if (data.id) setWorkflowId(data.id);
+                      setWorkflowMeta({
+                        name: data.name || workflowMeta.name,
+                        version: data.version || workflowMeta.version,
+                        environment: data.environment || 'draft'
+                      });
+                      setNodes(data.nodes || []);
+                      setEdges(data.edges || []);
+                      if (data.viewport && reactFlowInstance) {
+                        reactFlowInstance.setViewport(data.viewport);
+                      }
+                      setIsCodeViewOpen(false);
+                      toast({ title: "Workflow Updated", description: "Code changes applied successfully." });
+                    } catch (error) {
+                      toast({ title: "Invalid JSON", description: error.message, variant: "destructive" });
                     }
-                    setIsCodeViewOpen(false);
-                    toast({ title: "Workflow Updated", description: "Code changes applied successfully." });
-                  } catch (error) {
-                    toast({ title: "Invalid JSON", description: error.message, variant: "destructive" });
-                  }
-                }}>
-                  <Check className="w-4 h-4" /> Apply
-                </Button>
+                  }}>
+                    <Check className="w-4 h-4" /> Apply
+                  </Button>
+                </div>
+                <textarea
+                  className="w-full h-full p-4 bg-slate-950 text-xs font-mono text-blue-300/90 leading-relaxed selection:bg-blue-500/30 resize-none focus:outline-none border-none"
+                  value={codeViewContent}
+                  onChange={(e) => setCodeViewContent(e.target.value)}
+                  spellCheck="false"
+                />
               </div>
-              <textarea
-                className="w-full h-full p-4 bg-slate-950 text-xs font-mono text-blue-300/90 leading-relaxed selection:bg-blue-500/30 resize-none focus:outline-none border-none"
-                value={codeViewContent}
-                onChange={(e) => setCodeViewContent(e.target.value)}
-                spellCheck="false"
-              />
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Load Workflow Modal */}
-      {isLoadModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-              <h3 className="font-semibold text-slate-200">Saved Workflows</h3>
-              <Button variant="ghost" size="icon" onClick={() => setIsLoadModalOpen(false)}><ChevronRight className="w-4 h-4 rotate-90" /></Button>
-            </div>
-            <div className="p-2 overflow-y-auto space-y-1">
-              {savedWorkflows.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">No saved workflows found.</div>}
-              {savedWorkflows.map(wf => (
-                <div key={wf.id} onClick={() => handleLoad(wf.id)} className="p-3 hover:bg-slate-800 rounded-lg cursor-pointer group flex items-center justify-between transition-colors">
-                  <div>
-                    <div className="font-medium text-slate-200 text-sm">{wf.name}</div>
-                    <div className="text-xs text-slate-500">v{wf.version} • {new Date(wf.updatedAt).toLocaleDateString()}</div>
+      {
+        isLoadModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[80vh]">
+              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                <h3 className="font-semibold text-slate-200">Saved Workflows</h3>
+                <Button variant="ghost" size="icon" onClick={() => setIsLoadModalOpen(false)}><ChevronRight className="w-4 h-4 rotate-90" /></Button>
+              </div>
+              <div className="p-2 overflow-y-auto space-y-1">
+                {savedWorkflows.length === 0 && <div className="p-4 text-center text-slate-500 text-sm">No saved workflows found.</div>}
+                {savedWorkflows.map(wf => (
+                  <div key={wf.id} onClick={() => handleLoad(wf.id)} className="p-3 hover:bg-slate-800 rounded-lg cursor-pointer group flex items-center justify-between transition-colors">
+                    <div>
+                      <div className="font-medium text-slate-200 text-sm">{wf.name}</div>
+                      <div className="text-xs text-slate-500">v{wf.version} • {new Date(wf.updatedAt).toLocaleDateString()}</div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDelete(wf.id, e)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => handleDelete(wf.id, e)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Execution History Modal */}
-      {isHistoryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-              <h3 className="font-semibold text-slate-200">Execution History</h3>
-              <Button variant="ghost" size="icon" onClick={() => setIsHistoryOpen(false)}><X className="w-4 h-4" /></Button>
-            </div>
-            <div className="p-4 overflow-y-auto space-y-2">
-              {runHistory.length === 0 && <div className="text-center text-slate-500 py-8">No runs yet.</div>}
-              {runHistory.map((run) => (
-                <div key={run.id} className="p-4 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-2 h-2 rounded-full ${run.status === 'completed' ? 'bg-green-500' : 'bg-red-500'}`} />
-                    <div>
-                      <div className="text-sm font-medium text-slate-200">
-                        {run.status === 'completed' ? 'Success' : 'Failed'}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {run.timestamp.toLocaleTimeString()} • {Object.keys(run.results).length} nodes processed
+      {
+        isHistoryOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+              <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                <h3 className="font-semibold text-slate-200">Execution History</h3>
+                <Button variant="ghost" size="icon" onClick={() => setIsHistoryOpen(false)}><X className="w-4 h-4" /></Button>
+              </div>
+              <div className="p-4 overflow-y-auto space-y-2">
+                {runHistory.length === 0 && <div className="text-center text-slate-500 py-8">No runs yet.</div>}
+                {runHistory.map((run) => (
+                  <div key={run.id} className="p-4 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-2 h-2 rounded-full ${run.status === 'completed' ? 'bg-green-500' : 'bg-red-500'}`} />
+                      <div>
+                        <div className="text-sm font-medium text-slate-200">
+                          {run.status === 'completed' ? 'Success' : 'Failed'}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {run.timestamp.toLocaleTimeString()} • {Object.keys(run.results).length} nodes processed
+                        </div>
                       </div>
                     </div>
+                    <Button variant="outline" size="sm" onClick={() => { setExecutionResults(run.results); setIsHistoryOpen(false); toast({ description: "Loaded past run results" }); }}>
+                      Load Results
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => { setExecutionResults(run.results); setIsHistoryOpen(false); toast({ description: "Loaded past run results" }); }}>
-                    Load Results
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

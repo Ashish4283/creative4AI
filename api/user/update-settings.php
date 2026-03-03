@@ -44,6 +44,11 @@ try {
         $updates[] = "builder_prefs = :builder";
         $params[':builder'] = json_encode($data['builder_prefs']);
     }
+
+    if (isset($data['engine_prefs'])) {
+        $updates[] = "engine_prefs = :engine";
+        $params[':engine'] = json_encode($data['engine_prefs']);
+    }
     
     if (isset($data['api_key'])) {
         $updates[] = "api_key = :api_key";

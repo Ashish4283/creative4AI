@@ -376,10 +376,15 @@ class WorkflowEngine {
     }
 
     async execute(workflowId, payload, options = {}) {
-        const { onLog = () => { }, userId } = options;
+        const { onLog = () => { }, userId, config = {} } = options;
         const log = (msg) => onLog({ timestamp: new Date(), message: msg });
 
-        log(`Workflow ${workflowId} started.`);
+        // Protocol Extraction: Respect User Settings
+        const isStrict = config.strict_mode ?? true;
+        const isParallel = config.parallel_execution ?? false;
+        const latency = Number(config.simulated_latency || 0);
+
+        log(`Workflow ${workflowId} started. Mode: ${isStrict ? 'Strict' : 'Resilient'}.`);
 
         try {
             const workflow = await storageAdapter.loadWorkflow(workflowId);
@@ -406,57 +411,81 @@ class WorkflowEngine {
                 incoming.get(e.target).push(e.source);
             });
 
-            // Execution Queue (BFS)
-            const queue = nodes.filter(n => !incoming.has(n.id) || n.entry).map(n => n.id);
+            // Execution State
             const results = {};
             const nodeStatus = {};
+            const inProgress = new Set();
 
-            // Initialize start nodes
-            queue.forEach(id => results[id] = payload);
+            // Initial Start Nodes
+            const startNodes = nodes.filter(n => !incoming.has(n.id) || n.entry).map(n => n.id);
+            const queue = [...startNodes];
+            startNodes.forEach(id => results[id] = payload);
 
-            while (queue.length > 0) {
+            while (queue.length > 0 || inProgress.size > 0) {
+                // If parallel mode is off, we wait for the current node even if others are ready
+                if (!isParallel && inProgress.size > 0) {
+                    await new Promise(r => setTimeout(r, 50));
+                    continue;
+                }
+
+                if (queue.length === 0) {
+                    await new Promise(r => setTimeout(r, 50));
+                    continue;
+                }
+
                 const nodeId = queue.shift();
                 const node = nodeMap.get(nodeId);
 
-                // Prepare Inputs
-                let nodeInputs = results[nodeId] || {};
-                const parents = incoming.get(nodeId) || [];
-                if (parents.length > 0) {
-                    nodeInputs = parents.reduce((acc, pid) => ({ ...acc, ...results[pid] }), {});
-                }
+                inProgress.add(nodeId);
+                nodeStatus[nodeId] = 'running';
 
-                // Execute Handler
-                const handler = this.handlers[node.data.type] || this.handlers['default'];
-                if (!this.handlers[node.data.type]) {
-                    log(`Warning: No handler for node type '${node.data.type}'. Passing through.`);
-                }
-
-                try {
-                    const output = await handler(node, nodeInputs, { ...options, environment: env });
-                    results[nodeId] = output;
-                    nodeStatus[nodeId] = 'completed';
-
-                    // Trigger Children
-                    const children = outgoing.get(nodeId) || [];
-                    children.forEach(edge => {
-                        const childId = edge.id;
-
-                        // Branching Logic: If node returned a specific route (e.g. 'true' or 'false'), filter edges
-                        if (results[nodeId]?._route) {
-                            const allowedRoutes = results[nodeId]._route;
-                            // If the edge is connected to a handle that isn't in the allowed routes, skip it
-                            if (edge.handle && !allowedRoutes.includes(edge.handle)) return;
+                // Handle Logic in a separate promise to allow parallel execution
+                (async () => {
+                    try {
+                        // Prepare Inputs
+                        let nodeInputs = results[nodeId] || {};
+                        const parents = incoming.get(nodeId) || [];
+                        if (parents.length > 0) {
+                            nodeInputs = parents.reduce((acc, pid) => ({ ...acc, ...results[pid] }), {});
                         }
 
-                        const childParents = incoming.get(childId) || [];
-                        if (childParents.every(pid => nodeStatus[pid] === 'completed') && !queue.includes(childId)) {
-                            queue.push(childId);
+                        // Simulated Latency (Deep Thinking Mode)
+                        if (latency > 0) await new Promise(r => setTimeout(r, latency));
+
+                        // Execute Handler
+                        const handler = this.handlers[node.data.type] || this.handlers['default'];
+                        const output = await handler(node, nodeInputs, { ...options, environment: env });
+
+                        results[nodeId] = output;
+                        nodeStatus[nodeId] = 'completed';
+                        inProgress.delete(nodeId);
+
+                        // Trigger Children
+                        const children = outgoing.get(nodeId) || [];
+                        children.forEach(edge => {
+                            const childId = edge.id;
+                            if (results[nodeId]?._route) {
+                                if (edge.handle && !results[nodeId]._route.includes(edge.handle)) return;
+                            }
+                            const childParents = incoming.get(childId) || [];
+                            if (childParents.every(pid => nodeStatus[pid] === 'completed') && !queue.includes(childId) && !inProgress.has(childId)) {
+                                queue.push(childId);
+                            }
+                        });
+                    } catch (err) {
+                        log(`Error in ${node.data.label}: ${err.message}`);
+                        nodeStatus[nodeId] = 'failed';
+                        inProgress.delete(nodeId);
+
+                        if (isStrict) {
+                            queue.length = 0; // Clear queue to stop execution
+                            throw err;
+                        } else {
+                            log(`Warning: Continuing despite error in ${node.data.label}.`);
+                            results[nodeId] = { _error: err.message };
                         }
-                    });
-                } catch (err) {
-                    log(`Error in ${node.data.label}: ${err.message}`);
-                    throw err;
-                }
+                    }
+                })();
             }
 
             log(`Workflow completed successfully.`);
