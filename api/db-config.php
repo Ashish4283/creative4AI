@@ -156,6 +156,9 @@ try {
         }
     }
 
+    // 4b. Self-Healing Migration: Fix corrupted roles from previous bad inserts
+    $pdo->exec("UPDATE users SET role = 'tech_user' WHERE role IS NULL OR role = ''");
+
     // 5. Workflows (Cluster Scoped)
     $pdo->exec("CREATE TABLE IF NOT EXISTS workflows (
         id INT AUTO_INCREMENT PRIMARY KEY,

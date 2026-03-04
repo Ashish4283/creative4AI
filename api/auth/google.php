@@ -97,7 +97,8 @@ try {
         $updateStmt->execute([':provider_id' => $google_id, ':id' => $user['id']]);
         
         $userId = $user['id'];
-        $userRole = $user['role'];
+        $userRole = $user['role'] ?: 'tech_user'; // Safety: heal empty roles from DB
+        error_log("[GoogleAuth] Found existing user: {$email} with role: {$userRole}");
     } else {
         // Create new user completely without a password
         // Set trial to 14 days from now
@@ -112,7 +113,8 @@ try {
         ]);
         
         $userId = $pdo->lastInsertId();
-        $userRole = 'user';
+        $userRole = 'tech_user'; // Corrected from 'user' to match enum
+        error_log("[GoogleAuth] Created new user: {$email}");
     }
 
     // 3. Issue our own system JWT

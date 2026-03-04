@@ -28,17 +28,22 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     if (requiredRole) {
         const ROLE_LEVELS = {
             'agent': 1,
+            'user': 2,
             'tech_user': 2,
             'manager': 3,
             'admin': 4,
             'super_admin': 5
         };
 
-        const userLevel = ROLE_LEVELS[user?.role] || 0;
-        const requiredLevel = ROLE_LEVELS[requiredRole] || 0;
+        const uRole = user?.role || 'tech_user';
+        const userLevel = ROLE_LEVELS[uRole.toLowerCase()] || 0;
+        const requiredLevel = ROLE_LEVELS[requiredRole.toLowerCase()] || 0;
 
         if (userLevel < requiredLevel) {
-            return <Navigate to="/dashboard" replace />;
+            // ONLY redirect if we are not already going where we need to go
+            if (location.pathname !== '/dashboard') {
+                return <Navigate to="/dashboard" replace />;
+            }
         }
     }
 

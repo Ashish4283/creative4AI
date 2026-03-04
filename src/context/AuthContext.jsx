@@ -17,9 +17,10 @@ export const AuthProvider = ({ children }) => {
             const storedUser = localStorage.getItem('saas_user');
 
             if (storedToken && storedUser) {
+                const u = JSON.parse(storedUser);
                 setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-                console.log("[Auth] Session Hybrated for:", JSON.parse(storedUser).email);
+                setUser(u);
+                console.log("[Auth] Session Hydrated:", u.email, "| Role:", u.role);
             }
         } catch (err) {
             console.error("[Auth] Hydration error - clearing corrupt session:", err);
