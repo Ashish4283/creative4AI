@@ -816,6 +816,18 @@ const WorkflowBuilder = () => {
     }
   };
 
+  const openCodeView = () => {
+    const workflowData = {
+      id: workflowId,
+      ...workflowMeta,
+      nodes,
+      edges,
+      viewport: reactFlowInstance ? reactFlowInstance.getViewport() : { x: 0, y: 0, zoom: 1 }
+    };
+    setCodeViewContent(JSON.stringify(workflowData, null, 2));
+    setIsCodeViewOpen(true);
+  };
+
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
       {/* Top Bar - Refined for Pro Connectivity */}
@@ -987,6 +999,9 @@ const WorkflowBuilder = () => {
           <div className="flex items-center gap-1">
             <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={() => setIsHistoryOpen(true)}>
               <History className="w-5 h-5" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-blue-400" onClick={openCodeView} title="View/Edit JSON Code">
+              <FileCode className="w-5 h-5" />
             </Button>
             <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={handleExport}>
               <Download className="w-5 h-5" />
