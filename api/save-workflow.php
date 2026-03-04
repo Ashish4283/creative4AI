@@ -47,8 +47,8 @@ try {
       $userDb = $uStmt->fetch();
 
       if ($userDb) {
-          // If role is 'user' AND has no manager -> check trial
-          if ($userDb['role'] === 'user' && empty($userDb['manager_id'])) {
+          // If role is 'tech_user' or 'agent' AND has no manager -> check trial
+          if (in_array($userDb['role'], ['tech_user', 'agent']) && empty($userDb['manager_id'])) {
               // Check trial expiry
               if ($userDb['trial_ends_at'] && strtotime($userDb['trial_ends_at']) < time()) {
                   http_response_code(403);
@@ -116,6 +116,10 @@ try {
 } catch (Exception $e) {
   http_response_code(500);
   error_log("Save Workflow Error: " . $e->getMessage());
-  echo json_encode(["status" => "error", "message" => "Could not save the workflow."]);
+  echo json_encode([
+    "status" => "error", 
+    "message" => "Could not save the workflow.",
+    "debug" => $e->getMessage()
+  ]);
 }
 ?>

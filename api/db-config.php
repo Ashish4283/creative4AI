@@ -147,7 +147,11 @@ try {
         'notification_prefs' => "JSON DEFAULT NULL",
         'builder_prefs' => "JSON DEFAULT NULL",
         'engine_prefs' => "JSON DEFAULT NULL",
-        'group_id' => "INT DEFAULT NULL"
+        'group_id' => "INT DEFAULT NULL",
+        'trial_ends_at' => "TIMESTAMP DEFAULT NULL",
+        'manager_id' => "INT DEFAULT NULL",
+        'auth_provider' => "VARCHAR(50) DEFAULT 'local'",
+        'provider_id' => "VARCHAR(255) DEFAULT NULL"
     ];
 
     foreach ($columnMap as $col => $def) {
