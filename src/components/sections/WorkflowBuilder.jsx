@@ -816,6 +816,65 @@ const WorkflowBuilder = () => {
     }
   };
 
+  const healWorkflowData = (data) => {
+    if (!data) return data;
+
+    // 1. Sanitize Viewport
+    if (data.viewport) {
+      if (data.viewport.x === null) data.viewport.x = 0;
+      if (data.viewport.y === null) data.viewport.y = 0;
+      if (data.viewport.zoom === null) data.viewport.zoom = 1;
+    }
+
+    // 2. Sanitize Nodes
+    if (Array.isArray(data.nodes)) {
+      data.nodes = data.nodes.map((node, index) => {
+        const healed = { ...node };
+
+        // Handle flat numeric position (1, 2, 3...)
+        if (typeof healed.position === 'number') {
+          healed.position = { x: 250, y: healed.position * 150 };
+        } else if (!healed.position || typeof healed.position.x !== 'number') {
+          healed.position = { x: 250, y: (index + 1) * 150 };
+        }
+
+        // Map external/legacy types to internal engine types
+        const typeMapping = {
+          'google_sheet_reader': 'googleSheetsNode',
+          'google_sheet_writer': 'googleSheetsNode',
+          'data_transform': 'dataNode',
+          'data_collector': 'dataNode',
+          'task_generator': 'aiNode',
+          'remote_render_node': 'apiNode',
+          'human_review': 'appNode',
+          'custom_function': 'customNode'
+        };
+
+        const internalSubtype = typeMapping[healed.type] || healed.type || 'default';
+
+        // Ensure data object exists and contains the logic subtype and label
+        if (!healed.data) healed.data = {};
+
+        // Move top-level properties from user-provided JSON into data object
+        ['config', 'input', 'output', 'input_data', 'output_data', 'fields'].forEach(key => {
+          if (healed[key] !== undefined && healed.data[key] === undefined) {
+            healed.data[key] = healed[key];
+          }
+        });
+
+        healed.data.type = internalSubtype;
+        healed.data.label = healed.label || healed.data.label || internalSubtype.replace('Node', '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+        // Force ReactFlow type to our standard node wrapper
+        healed.type = 'workflowNode';
+
+        return healed;
+      });
+    }
+
+    return data;
+  };
+
   const openCodeView = () => {
     const workflowData = {
       id: workflowId,
@@ -1289,23 +1348,28 @@ const WorkflowBuilder = () => {
                   </Button>
                   <Button size="sm" className="gap-2 shadow-lg bg-blue-600 hover:bg-blue-700 text-white" onClick={() => {
                     try {
-                      const data = JSON.parse(codeViewContent);
+                      const rawData = JSON.parse(codeViewContent);
+                      const data = healWorkflowData(rawData);
+
                       recordHistory();
                       if (data.id) setWorkflowId(data.id);
                       setWorkflowMeta({
                         name: data.name || workflowMeta.name,
                         version: data.version || workflowMeta.version,
-                        environment: data.environment || 'draft'
+                        environment: data.environment || 'draft',
+                        isActive: data.isActive || false
                       });
                       setNodes(data.nodes || []);
                       setEdges(data.edges || []);
                       if (data.viewport && reactFlowInstance) {
-                        reactFlowInstance.setViewport(data.viewport);
+                        try {
+                          reactFlowInstance.setViewport(data.viewport);
+                        } catch (e) { console.warn("Viewport set failed", e); }
                       }
                       setIsCodeViewOpen(false);
-                      toast({ title: "Workflow Updated", description: "Code changes applied successfully." });
+                      toast({ title: "Architecture Healed", description: "Workflow auto-mapped to engine and applied." });
                     } catch (error) {
-                      toast({ title: "Invalid JSON", description: error.message, variant: "destructive" });
+                      toast({ title: "Invalid Architecture", description: error.message, variant: "destructive" });
                     }
                   }}>
                     <Check className="w-4 h-4" /> Apply
