@@ -28,20 +28,45 @@ import {
     Plus,
     Trash2,
     GripVertical,
-    HelpCircle
+    HelpCircle,
+    Folders
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 
-const SECTIONS = [
-    { id: 'core', label: 'Core Logic', icon: Settings },
-    { id: 'flow', label: 'Flow Control', icon: Activity },
-    { id: 'plugins', label: 'System Plugins', icon: Cloud },
-    { id: 'builder', label: 'Process Builder', icon: Wand2 },
-    { id: 'dir', label: 'Detailed Directory', icon: Terminal },
+const CATEGORIES = [
+    { id: 'process_builder', label: 'Process Builder Nodes Details', icon: Wand2 },
+    { id: 'getting_started', label: 'Getting Started Guide', icon: BookOpen },
+    { id: 'integrations', label: 'Integrations & APIs', icon: Webhook }
 ];
+
+const SECTIONS = {
+    process_builder: [
+        { id: 'core', label: 'Core Logic', icon: Settings },
+        { id: 'flow', label: 'Flow Control', icon: Activity },
+        { id: 'plugins', label: 'System Plugins', icon: Cloud },
+        { id: 'builder', label: 'Builder Features', icon: Wand2 },
+        { id: 'dir', label: 'Detailed Directory', icon: Terminal },
+    ],
+    getting_started: [
+        { id: 'onboarding', label: 'Onboarding Basics', icon: Zap },
+        { id: 'faq', label: 'FAQs', icon: HelpCircle },
+    ],
+    integrations: [
+        { id: 'custom_apis', label: 'Custom APIs', icon: Cloud },
+        { id: 'third_party', label: 'Third-Party Auth', icon: Shield },
+    ]
+};
+
+const getSectionLabel = (sectionId) => {
+    for (const cat of Object.values(SECTIONS)) {
+        const found = cat.find(s => s.id === sectionId);
+        if (found) return found.label;
+    }
+    return sectionId;
+};
 
 const DEFAULT_CONTENT = {
     core: [
@@ -147,12 +172,45 @@ const DEFAULT_CONTENT = {
             description: 'Zero-Code Flow Generation.\n\nHOW TO USE:\n1. Type your goal (e.g., "Build a flow that scrapes Amazon and emails me prices").\n2. Click Generate.\n3. The AI will drop the required nodes and connect them for you.',
             color: 'text-primary'
         },
+    ],
+    onboarding: [
+        {
+            title: 'Welcome to Creative 4 AI',
+            icon: Zap,
+            description: 'The premier enterprise agentic platform.\n\nGetting started and navigation:\n1. Use the left sidebar to navigate.\n2. Go to "Team HQ" to add members.\n3. Add API Keys in "Credentials" to use AI models.',
+            color: 'text-amber-400'
+        }
+    ],
+    faq: [
+        {
+            title: 'Billing Metrics',
+            icon: Activity,
+            description: 'How is usage calculated?\n\n1. AI Models: Token-based billing.\n2. Storage: Context Memory uses block storage.\n3. Users: Free for all Team HQ members.',
+            color: 'text-rose-400'
+        }
+    ],
+    custom_apis: [
+        {
+            title: 'Inbound Webhooks',
+            icon: Webhook,
+            description: 'Trigger workflows from external apps.\n\n1. Use the Webhook trigger node.\n2. Send a POST request with JSON payload.\n3. The webhook URL is secured automatically via your cluster.',
+            color: 'text-blue-500'
+        }
+    ],
+    third_party: [
+        {
+            title: 'Google OAuth Config',
+            icon: Shield,
+            description: 'For user login integration.\n\n1. Obtain Google Client ID from GCP.\n2. Store in "Credentials" panel.\n3. Update .env file on the deployment cluster.',
+            color: 'text-emerald-400'
+        }
     ]
 };
 
 export default function KnowledgeBase() {
     const { user } = useAuth();
     const isSuperAdmin = user?.role === 'super_admin';
+    const [activeCategory, setActiveCategory] = useState('process_builder');
     const [activeTab, setActiveTab] = useState('core');
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState(DEFAULT_CONTENT);
@@ -184,13 +242,13 @@ export default function KnowledgeBase() {
         }
     };
 
-    // Global Search Logic
+    // Global Search Logic across all categories and sections
     const allItems = Object.entries(content).flatMap(([sectionId, items]) =>
         items.map(item => ({ ...item, sectionId }))
     );
 
     const filteredItems = searchQuery.trim() === ''
-        ? content[activeTab]
+        ? (content[activeTab] || [])
         : allItems.filter(item =>
             item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -207,7 +265,7 @@ export default function KnowledgeBase() {
                 },
                 body: JSON.stringify({
                     section_id: activeTab,
-                    content: content[activeTab]
+                    content: content[activeTab] || []
                 })
             });
             const result = await response.json();
@@ -223,33 +281,32 @@ export default function KnowledgeBase() {
     };
 
     const updateItem = (index, field, value) => {
-        const newItems = [...content[activeTab]];
+        const newItems = [...(content[activeTab] || [])];
         newItems[index] = { ...newItems[index], [field]: value };
         setContent({ ...content, [activeTab]: newItems });
     };
 
     const addItem = () => {
-        const newItems = [...content[activeTab], { title: 'New Item', icon: HelpCircle, description: 'Details here...', color: 'text-slate-400' }];
+        const newItems = [...(content[activeTab] || []), { title: 'New Item', icon: HelpCircle, description: 'Details here...', color: 'text-slate-400' }];
         setContent({ ...content, [activeTab]: newItems });
     };
 
     const removeItem = (index) => {
-        const newItems = content[activeTab].filter((_, i) => i !== index);
+        const newItems = (content[activeTab] || []).filter((_, i) => i !== index);
         setContent({ ...content, [activeTab]: newItems });
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="p-8 max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-700">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/5">
                 <div className="space-y-1 text-left flex-grow">
                     <div className="flex items-center gap-3 text-primary">
                         <div className="p-2 bg-primary/10 rounded-lg">
-                            <BookOpen className="w-6 h-6" />
+                            <Folders className="w-6 h-6" />
                         </div>
                         <h1 className="text-3xl font-outfit font-bold text-white tracking-tight">Enterprise Knowledge Base</h1>
                     </div>
-                    <p className="text-slate-400">Master the architecture and logic of the Creative 4 AI Process Builder.</p>
                 </div>
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
@@ -296,148 +353,181 @@ export default function KnowledgeBase() {
                 </div>
             </div>
 
-            {/* Navigation Tabs (Hidden during search) */}
-            {!searchQuery && (
-                <div className="flex gap-1 p-1 bg-slate-900/50 border border-white/5 rounded-2xl w-fit">
-                    {SECTIONS.map((section) => (
+            <div className="flex flex-col md:flex-row gap-8">
+                {/* Left Sidebar for Categories */}
+                <div className="w-full md:w-64 shrink-0 space-y-2">
+                    <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] pl-3 mb-4">Knowledge Categories</h2>
+                    {CATEGORIES.map(cat => (
                         <button
-                            key={section.id}
-                            onClick={() => { setActiveTab(section.id); setIsEditing(false); }}
+                            key={cat.id}
+                            onClick={() => {
+                                setActiveCategory(cat.id);
+                                setActiveTab(SECTIONS[cat.id][0].id);
+                                setIsEditing(false);
+                                setSearchQuery('');
+                            }}
                             className={cn(
-                                "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap",
-                                activeTab === section.id
+                                "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all font-medium text-sm text-left group",
+                                activeCategory === cat.id && !searchQuery
                                     ? "bg-primary text-white shadow-lg shadow-primary/20"
                                     : "text-slate-400 hover:text-white hover:bg-white/5"
                             )}
                         >
-                            <section.icon className="w-4 h-4" />
-                            {section.label}
+                            <cat.icon className={cn(
+                                "w-5 h-5 transition-transform",
+                                activeCategory === cat.id && !searchQuery ? "" : "group-hover:scale-110"
+                            )} />
+                            {cat.label}
                         </button>
                     ))}
                 </div>
-            )}
 
-            {searchQuery && (
-                <div className="flex items-center gap-2 text-slate-400 text-sm pl-2">
-                    <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-                    Found {filteredItems.length} matching articles for "{searchQuery}"
-                </div>
-            )}
-
-            {/* Content Area */}
-            <div className="min-h-[500px] relative">
-                {isLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Clock className="w-8 h-8 text-primary animate-spin" />
-                    </div>
-                ) : activeTab === 'dir' && !searchQuery ? (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden"
-                    >
-                        <table className="w-full text-left">
-                            <thead className="bg-white/5 border-b border-white/5">
-                                <tr>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Type</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Title</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Description</th>
-                                    <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Section</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {allItems.map((item, idx) => (
-                                    <tr key={idx} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className={cn("p-2 rounded-lg bg-slate-950 border border-white/5 w-fit", item.color)}>
-                                                {item.icon ? <item.icon className="w-4 h-4" /> : <HelpCircle className="w-4 h-4" />}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm font-bold text-white whitespace-nowrap">{item.title}</td>
-                                        <td className="px-6 py-4 text-sm text-slate-400 max-w-md truncate">{item.description}</td>
-                                        <td className="px-6 py-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
-                                            {SECTIONS.find(s => s.id === item.sectionId)?.label}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        layout
-                        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                    >
-                        <AnimatePresence mode="popLayout">
-                            {filteredItems.map((item, idx) => {
-                                const IconComp = item.icon || HelpCircle;
-                                return (
-                                    <motion.div
-                                        key={`${item.sectionId || activeTab}-${idx}`}
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.9 }}
-                                        layout
-                                        className="group relative p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:border-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/5 overflow-hidden"
-                                    >
-                                        {searchQuery && (
-                                            <div className="absolute top-4 right-6 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] px-2 py-1 bg-white/5 rounded-lg border border-white/5">
-                                                {SECTIONS.find(s => s.id === item.sectionId)?.label || item.sectionId}
-                                            </div>
-                                        )}
-                                        <div className="flex gap-4">
-                                            <div className={cn("p-4 rounded-2xl bg-slate-950 border border-white/5 shrink-0", item.color || "text-slate-400")}>
-                                                <IconComp className="w-6 h-6 shrink-0" />
-                                            </div>
-                                            <div className="space-y-2 flex-grow">
-                                                {isEditing ? (
-                                                    <div className="space-y-3">
-                                                        <input
-                                                            value={item.title}
-                                                            onChange={(e) => updateItem(idx, 'title', e.target.value)}
-                                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-white focus:border-primary focus:outline-none"
-                                                            placeholder="Node Title"
-                                                        />
-                                                        <textarea
-                                                            value={item.description}
-                                                            onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                                                            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-sm text-slate-300 focus:border-primary focus:outline-none min-h-[100px]"
-                                                            placeholder="Node Description"
-                                                        />
-                                                        <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                                                            <Trash2 className="w-4 h-4 mr-2" /> Remove
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <h3 className="text-lg font-bold text-white tracking-tight">{item.title}</h3>
-                                                        <p className="text-sm text-slate-400 leading-relaxed font-medium">
-                                                            {item.description}
-                                                        </p>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-
-                            {isEditing && (
-                                <motion.button
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    onClick={addItem}
-                                    className="p-6 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center gap-3 text-slate-500 hover:border-primary/50 hover:text-primary transition-all group lg:min-h-[200px]"
+                {/* Right Content Area */}
+                <div className="flex-1 space-y-6">
+                    {/* Navigation Sub-Tabs (Hidden during search) */}
+                    {!searchQuery && (
+                        <div className="flex gap-1 p-1 bg-slate-900/50 border border-white/5 rounded-2xl w-fit flex-wrap">
+                            {SECTIONS[activeCategory].map((section) => (
+                                <button
+                                    key={section.id}
+                                    onClick={() => { setActiveTab(section.id); setIsEditing(false); }}
+                                    className={cn(
+                                        "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-medium text-sm whitespace-nowrap",
+                                        activeTab === section.id
+                                            ? "bg-slate-800 text-white shadow-lg"
+                                            : "text-slate-400 hover:text-white hover:bg-white/5"
+                                    )}
                                 >
-                                    <div className="p-3 bg-slate-900 rounded-2xl group-hover:scale-110 transition-transform">
-                                        <Plus className="w-6 h-6" />
-                                    </div>
-                                    <span className="font-bold text-sm uppercase tracking-widest">Add New Documentation Node</span>
-                                </motion.button>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
-                )}
+                                    <section.icon className="w-4 h-4" />
+                                    {section.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {searchQuery && (
+                        <div className="flex items-center gap-2 text-slate-400 text-sm pl-2">
+                            <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
+                            Found {filteredItems.length} matching articles for "{searchQuery}"
+                        </div>
+                    )}
+
+                    {/* Content Area */}
+                    <div className="min-h-[500px] relative">
+                        {isLoading ? (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <Clock className="w-8 h-8 text-primary animate-spin" />
+                            </div>
+                        ) : activeTab === 'dir' && !searchQuery ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden"
+                            >
+                                <table className="w-full text-left">
+                                    <thead className="bg-white/5 border-b border-white/5">
+                                        <tr>
+                                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Type</th>
+                                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Title</th>
+                                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Description</th>
+                                            <th className="px-6 py-4 text-[10px] font-black uppercase text-slate-500 tracking-widest">Section</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {allItems.map((item, idx) => (
+                                            <tr key={idx} className="hover:bg-white/5 transition-colors group">
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className={cn("p-2 rounded-lg bg-slate-950 border border-white/5 w-fit", item.color)}>
+                                                        {item.icon ? React.createElement(item.icon, { className: 'w-4 h-4' }) : <HelpCircle className="w-4 h-4" />}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm font-bold text-white whitespace-nowrap">{item.title}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-400 max-w-md truncate whitespace-pre-wrap">{item.description.split('\n')[0]}...</td>
+                                                <td className="px-6 py-4 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                                                    {getSectionLabel(item.sectionId)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                layout
+                                className="grid grid-cols-1 xl:grid-cols-2 gap-6"
+                            >
+                                <AnimatePresence mode="popLayout">
+                                    {filteredItems.map((item, idx) => {
+                                        const IconComp = item.icon || HelpCircle;
+                                        return (
+                                            <motion.div
+                                                key={`${item.sectionId || activeTab}-${idx}`}
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.9 }}
+                                                layout
+                                                className="group relative p-6 bg-slate-900/40 border border-white/5 rounded-3xl hover:border-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/5 overflow-hidden flex flex-col h-full"
+                                            >
+                                                {searchQuery && (
+                                                    <div className="absolute top-4 right-6 text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] px-2 py-1 bg-white/5 rounded-lg border border-white/5">
+                                                        {getSectionLabel(item.sectionId)}
+                                                    </div>
+                                                )}
+                                                <div className="flex gap-4 h-full">
+                                                    <div className={cn("p-4 rounded-2xl bg-slate-950 border border-white/5 shrink-0 h-fit", item.color || "text-slate-400")}>
+                                                        <IconComp className="w-6 h-6 shrink-0" />
+                                                    </div>
+                                                    <div className="space-y-2 flex-grow flex flex-col">
+                                                        {isEditing ? (
+                                                            <div className="space-y-3 flex-grow h-full flex flex-col">
+                                                                <input
+                                                                    value={item.title}
+                                                                    onChange={(e) => updateItem(idx, 'title', e.target.value)}
+                                                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                                                    placeholder="Node Title"
+                                                                />
+                                                                <textarea
+                                                                    value={item.description}
+                                                                    onChange={(e) => updateItem(idx, 'description', e.target.value)}
+                                                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-300 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50 flex-grow min-h-[150px] custom-scrollbar"
+                                                                    placeholder="Node Description"
+                                                                />
+                                                                <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} className="text-red-400 hover:text-red-300 hover:bg-red-500/10 mt-auto self-start">
+                                                                    <Trash2 className="w-4 h-4 mr-2" /> Remove Item
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <h3 className="text-lg font-bold text-white tracking-tight">{item.title}</h3>
+                                                                <div className="text-sm text-slate-300 leading-relaxed font-medium whitespace-pre-wrap flex-grow">
+                                                                    {item.description}
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+
+                                    {isEditing && activeTab !== 'dir' && (
+                                        <motion.button
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            onClick={addItem}
+                                            className="p-6 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center gap-3 text-slate-500 hover:border-primary/50 hover:text-primary transition-all group lg:min-h-[250px]"
+                                        >
+                                            <div className="p-3 bg-slate-900 rounded-2xl group-hover:scale-110 transition-transform">
+                                                <Plus className="w-6 h-6" />
+                                            </div>
+                                            <span className="font-bold text-sm uppercase tracking-widest">Add New Documentation Node</span>
+                                        </motion.button>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
