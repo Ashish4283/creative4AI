@@ -239,14 +239,7 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
                     )}
                 </div>
 
-                <Link
-                    to="/settings"
-                    title={isCollapsed ? 'Settings' : ''}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-colors justify-center lg:justify-start"
-                >
-                    <Settings className="w-4 h-4 shrink-0" />
-                    {!isCollapsed && <span>Settings</span>}
-                </Link>
+
 
                 <button
                     onClick={logout}

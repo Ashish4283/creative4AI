@@ -46,6 +46,12 @@ $content = [
             "icon" => "Activity",
             "description" => "Handle large data lists with ease.\n\nHOW TO CONFIGURE:\n1. Input List: Select the array/list variable you want to loop through.\n2. Batch Size: How many items to process at once (e.g., 10).\n\nACTION: Loop the output back into the input of this node until finished.",
             "color" => "text-emerald-400"
+        ],
+        [
+            "title" => "Data Transformation",
+            "icon" => "Database",
+            "description" => "Manipulate complex JSON objects and arrays natively.\n\nHOW TO CONFIGURE:\n1. Open Settings: Select Data Node.\n2. Choose Operation: Pick mapping, aggregate, filter, or custom sort.\n3. Configure Keys: Define standard key mappings to normalize payloads between completely different APIs.\n\nUSE CASE: Converting messy Shopify orders into standardized shipping payloads.",
+            "color" => "text-indigo-500"
         ]
     ],
     "plugins" => [
@@ -78,6 +84,24 @@ $content = [
             "icon" => "Webhook",
             "description" => "The bridge to 5000+ other apps.\n\nHOW TO CONFIGURE:\n1. Method: Choose GET (fetch), POST (send), or DELETE.\n2. Headers: Enter API Keys or Auth Tokens here.\n3. Payload: The JSON data to send to the external service.",
             "color" => "text-blue-500"
+        ],
+        [
+            "title" => "Python Serverless",
+            "icon" => "Terminal",
+            "description" => "Run fully isolated Python scripts with custom libraries directly in your flow.\n\nHOW TO CONFIGURE:\n1. Python Code: Write your `def main(data):` entrypoint.\n2. Pip Packages: List libraries like `pandas`, `numpy`, or `requests`.\n3. Accessing Data: Input variables are supplied as a dictionary in `data`.\n\nPRO TIP: Perfect for data science aggregations or complex scraping tasks.",
+            "color" => "text-green-500"
+        ],
+        [
+            "title" => "Custom JavaScript",
+            "icon" => "FileCode",
+            "description" => "Write custom server-side Node.js snippets to handle specialized logic.\n\nHOW TO CONFIGURE:\n1. Open Code Snippet: Enter raw JS logic.\n2. Available Context: Previous node outputs are injected via standard variable scopes.\n3. Return Object: Must end with a return statment containing the output object map.\n\nPRO TIP: Use this for cryptography, encoding changes, or regex extraction.",
+            "color" => "text-amber-500"
+        ],
+        [
+            "title" => "Cloud Drive Source",
+            "icon" => "Cloud",
+            "description" => "Ingest files directly from connected Google Drive or OneDrive environments.\n\nHOW TO CONFIGURE:\n1. Authenticate: Connect your OAuth identity.\n2. Target ID: Paste the folder ID or direct File ID to monitor.\n3. Fetch: Extracted file contents are passed out as binary/text strings.\n\nPRO TIP: Great for OCR document ingestion workflows.",
+            "color" => "text-sky-400"
         ]
     ],
     "builder" => [
