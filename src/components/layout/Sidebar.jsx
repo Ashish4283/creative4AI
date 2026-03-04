@@ -43,7 +43,7 @@ const SidebarLink = ({ to, icon: Icon, label, active, onClick, isCollapsed }) =>
         {active && (
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-full" />
         )}
-        <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110 shrink-0", active && "text-primary")} />
+        {Icon ? <Icon className={cn("w-5 h-5 transition-transform duration-300 group-hover:scale-110 shrink-0", active && "text-primary")} /> : <div className="w-5 h-5 bg-white/10 rounded" />}
         {!isCollapsed && <span className="font-medium text-sm tracking-wide hidden lg:inline">{label}</span>}
         {!isCollapsed && active && <ChevronRight className="w-4 h-4 ml-auto opacity-50 hidden lg:block" />}
     </Link>

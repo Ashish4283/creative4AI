@@ -52,12 +52,18 @@ const AdminDashboard = () => {
                 listGroups()
             ]);
 
-            if (statsRes.status === 'success') {
+            if (statsRes.status === 'success' && statsRes.data) {
                 setStats(statsRes.data);
-                if (statsRes.data.organizations) setOrganizations(statsRes.data.organizations);
+                if (Array.isArray(statsRes.data.organizations)) {
+                    setOrganizations(statsRes.data.organizations);
+                }
             }
-            if (usersRes.status === 'success') setAllUsers(usersRes.data);
-            if (groupsRes.status === 'success') setGroups(groupsRes.data);
+            if (usersRes.status === 'success' && Array.isArray(usersRes.data)) {
+                setAllUsers(usersRes.data);
+            }
+            if (groupsRes.status === 'success' && Array.isArray(groupsRes.data)) {
+                setGroups(groupsRes.data);
+            }
 
         } catch (error) {
             console.error("Error fetching data", error);
@@ -249,7 +255,7 @@ const AdminDashboard = () => {
                                 <div className="h-px bg-white/5 my-4 mx-2" />
 
                                 <div className="space-y-1 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {groups.map(group => (
+                                    {(groups || []).map(group => (
                                         <div
                                             key={group.id}
                                             onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('bg-primary/20', 'scale-[1.02]'); }}
@@ -377,7 +383,7 @@ const AdminDashboard = () => {
                                     </thead>
                                     <tbody className="text-sm divide-y divide-white/5">
                                         <AnimatePresence>
-                                            {filteredUsers.map((u) => (
+                                            {(filteredUsers || []).map((u) => (
                                                 <motion.tr
                                                     key={u.id}
                                                     draggable
@@ -468,7 +474,7 @@ const AdminDashboard = () => {
                 /* Organizations Inventory */
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {organizations.map(org => (
+                        {(organizations || []).map(org => (
                             <motion.div
                                 key={org.id}
                                 initial={{ opacity: 0, y: 20 }}

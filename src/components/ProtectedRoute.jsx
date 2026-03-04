@@ -6,6 +6,13 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     const { isAuthenticated, user, isLoading } = useAuth();
     const location = useLocation();
 
+    console.log("[ProtectedRoute Trace]", {
+        path: location.pathname,
+        isLoading,
+        isAuthenticated,
+        userRole: user?.role
+    });
+
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center bg-zinc-950 text-white">
