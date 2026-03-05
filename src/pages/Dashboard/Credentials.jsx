@@ -10,6 +10,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 import { listCredentials, saveCredential, listClusters } from '@/services/api';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CredentialCard = ({ type, name, status, icon: Icon, color }) => {
     const [isVisible, setIsVisible] = useState(false);
@@ -26,9 +32,17 @@ const CredentialCard = ({ type, name, status, icon: Icon, color }) => {
                     )}>
                         {status}
                     </span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white rounded-lg">
-                        <MoreVertical className="w-4 h-4" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white rounded-lg">
+                                <MoreVertical className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-slate-950 border-white/10 text-slate-200">
+                            <DropdownMenuItem onClick={() => toast({ title: "Access Denied", description: "Rotation policy prevents editing active keys." })}><Edit2 className="w-4 h-4 mr-2" /> Rotate Key</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-400 focus:text-red-400" onClick={() => toast({ title: "Revoked", description: "Credential has been destroyed." })}><Trash2 className="w-4 h-4 mr-2" /> Revoke</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 

@@ -22,6 +22,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const AdminDashboard = () => {
     const { user } = useAuth();
@@ -443,37 +449,34 @@ const AdminDashboard = () => {
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
                                                         <div className="flex items-center justify-end gap-2">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-slate-500 hover:text-primary rounded-lg"
-                                                                onClick={() => {
-                                                                    const newRole = u.role === 'admin' ? 'tech_user' : 'admin';
-                                                                    updateUserRole(u.id, newRole).then(() => {
-                                                                        toast({ title: "Role Updated", description: `${u.name}'s protocol level changed to ${newRole}.` });
-                                                                        fetchData();
-                                                                    });
-                                                                }}
-                                                                title="Shift Role"
-                                                            >
-                                                                <Shield className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-slate-500 hover:text-red-400 rounded-lg"
-                                                                onClick={() => {
-                                                                    if (confirm(`Decommission entity ${u.name}? This cannot be undone.`)) {
-                                                                        deleteUser(u.id).then(() => {
-                                                                            toast({ title: "Entity Decommissioned", description: `${u.name} has been removed from the directory.` });
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white rounded-lg">
+                                                                        <MoreVertical className="w-4 h-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="bg-slate-950 border-white/10 text-slate-200">
+                                                                    <DropdownMenuItem onClick={() => {
+                                                                        const newRole = u.role === 'admin' ? 'tech_user' : 'admin';
+                                                                        updateUserRole(u.id, newRole).then(() => {
+                                                                            toast({ title: "Role Updated", description: `${u.name}'s protocol level changed to ${newRole}.` });
                                                                             fetchData();
                                                                         });
-                                                                    }
-                                                                }}
-                                                                title="Decommission"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
+                                                                    }}>
+                                                                        <Shield className="w-4 h-4 mr-2" /> Toggle Admin Role
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem className="text-red-400 focus:text-red-400" onClick={() => {
+                                                                        if (confirm(`Decommission entity ${u.name}? This cannot be undone.`)) {
+                                                                            deleteUser(u.id).then(() => {
+                                                                                toast({ title: "Entity Decommissioned", description: `${u.name} has been removed from the directory.` });
+                                                                                fetchData();
+                                                                            });
+                                                                        }
+                                                                    }}>
+                                                                        <Trash2 className="w-4 h-4 mr-2" /> Decommission Entity
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </div>
                                                     </td>
                                                 </motion.tr>

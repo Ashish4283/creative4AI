@@ -8,6 +8,12 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { listAllUsers, generateInvite, listGroups } from '../../services/api';
 import UserManagement from '../../components/dashboard/UserManagement';
 
@@ -260,28 +266,25 @@ const TeamHQ = () => {
                                             </td>
                                             <td className="px-8 py-6 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-slate-500 hover:text-primary rounded-lg"
-                                                        onClick={() => toast({ title: "Profile Access", description: `Loading personnel profile for ${member.name}.` })}
-                                                        title="Manage Member"
-                                                    >
-                                                        <UserCog className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-slate-500 hover:text-red-400 rounded-lg"
-                                                        onClick={() => {
-                                                            if (confirm(`Remove ${member.name} from your squad?`)) {
-                                                                toast({ title: "Squad Rebalanced", description: `Entity ${member.name} has been reassigned to external duties.` });
-                                                            }
-                                                        }}
-                                                        title="Decommission"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-white rounded-lg">
+                                                                <MoreVertical className="w-4 h-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="bg-slate-950 border-white/10 text-slate-200">
+                                                            <DropdownMenuItem onClick={() => toast({ title: "Profile Access", description: `Loading personnel profile for ${member.name}.` })}>
+                                                                <UserCog className="w-4 h-4 mr-2" /> Manage Profile
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-red-400 focus:text-red-400" onClick={() => {
+                                                                if (confirm(`Remove ${member.name} from your squad?`)) {
+                                                                    toast({ title: "Squad Rebalanced", description: `Entity ${member.name} has been reassigned to external duties.` });
+                                                                }
+                                                            }}>
+                                                                <Trash2 className="w-4 h-4 mr-2" /> Decommission
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
                                             </td>
                                         </tr>
