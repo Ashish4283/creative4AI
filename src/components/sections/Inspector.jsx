@@ -338,7 +338,7 @@ export default function Inspector({ selectedNode, setNodes, setSelectedNode, nod
                                         { id: 'schedule', label: 'Schedule', icon: Calendar },
                                         { id: 'email', label: 'Email', icon: Mail },
                                         { id: 'webhook', label: 'Webhook', icon: Webhook },
-                                        { id: 'form', label: 'On Form Submit', icon: FileSpreadsheet },
+                                        { id: 'bulk_csv', label: 'Bulk CSV / Task Pool', icon: FileSpreadsheet },
                                     ].map((trigger) => (
                                         <Button
                                             key={trigger.id}
@@ -368,6 +368,39 @@ export default function Inspector({ selectedNode, setNodes, setSelectedNode, nod
                                                 </div>
                                             ))}
                                             {(selectedNode.data.inputs || []).length === 0 && <p className="text-xs text-slate-600 italic text-center py-2">No inputs defined.</p>}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Bulk CSV Config */}
+                                {selectedNode.data.triggerType === 'bulk_csv' && (
+                                    <div className="space-y-4 pt-4 border-t border-slate-800 animate-in fade-in slide-in-from-top-2">
+                                        <div className="p-3 bg-slate-950 border border-slate-800 rounded">
+                                            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-slate-800 text-blue-500 bg-slate-900 h-4 w-4"
+                                                    checked={selectedNode.data.enableTaskPool || false}
+                                                    onChange={(e) => handleChange('enableTaskPool', e.target.checked)}
+                                                />
+                                                Enable Task Pool (Assignments)
+                                            </label>
+                                            <p className="mt-2 text-xs text-slate-500">
+                                                When a list of data is uploaded (e.g. Google Sheets or CSV), each row will become a pending task. Team members can claim tasks from the dashboard pool.
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs text-slate-400">Assigned Team / Cluster</label>
+                                            <select
+                                                className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+                                                value={selectedNode.data.taskCluster || 'all'}
+                                                onChange={(e) => handleChange('taskCluster', e.target.value)}
+                                            >
+                                                <option value="all">Everyone in Workspace</option>
+                                                <option value="sales">Sales Team</option>
+                                                <option value="support">Support Team</option>
+                                                <option value="operations">Operations Team</option>
+                                            </select>
                                         </div>
                                     </div>
                                 )}
