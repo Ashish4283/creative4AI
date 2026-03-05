@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { workflowEngine } from './lib/workflow-engine';
 import { storageAdapter } from './lib/workflow-storage';
-import { Loader2, Upload, Check, AlertTriangle, File as FileIcon } from 'lucide-react';
-
+import { Loader2, Upload, Check, AlertTriangle, File as FileIcon, UploadCloud, CheckCircle, AlertCircle, Users } from 'lucide-react';
+import Papa from 'papaparse';
 export default function UserApp() {
     const [searchParams] = useSearchParams();
     const workflowId = searchParams.get('id');
@@ -46,6 +46,23 @@ export default function UserApp() {
     const isMediaApp = workflow?.nodes?.some(n => n.data.type === 'mediaConvert');
     const appNode = workflow?.nodes?.find(n => n.data.type === 'appNode');
 
+    // Check if this is a Task Pool (Batch / Dependent) app
+    const startNode = workflow?.nodes?.find(n => n.data.type === 'default');
+    const isDependentTask = startNode?.data?.triggerType === 'manual' && startNode?.data?.manualTaskType === 'dependent';
+    const isBulkCsvTrigger = startNode?.data?.triggerType === 'bulk_csv';
+    const isBatchMode = isDependentTask || isBulkCsvTrigger;
+
+    const parseCSV = (file) => {
+        return new Promise((resolve, reject) => {
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => resolve(results.data),
+                error: (error) => reject(error)
+            });
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setStatus("running");
@@ -53,28 +70,66 @@ export default function UserApp() {
         setError(null);
 
         try {
-            const payload = {
-                ...formData,
-                file: file, // Pass the actual File object
-                fileName: file?.name,
-                timestamp: new Date().toISOString()
-            };
+            if (isBatchMode) {
+                // Batch Upload Mode: Parse CSV and Send to Tasks API
+                if (!file) throw new Error("Please upload a CSV file with your data rows.");
 
-            const resultContext = await workflowEngine.execute(workflowId, payload, {
-                onLog: (log) => console.log(`[App Log] ${log.message}`)
-            });
+                setStatus("running"); // Optional custom text if needed "Parsing..."
+                const parsedData = await parseCSV(file);
 
-            // Find the result from the media node if it exists, or the last node
-            let output = resultContext.results;
-            if (isMediaApp) {
-                const mediaNode = workflow.nodes.find(n => n.data.type === 'mediaConvert');
-                if (mediaNode && resultContext.results[mediaNode.id]) {
-                    output = resultContext.results[mediaNode.id];
+                if (parsedData.length === 0) throw new Error("The uploaded file contains no data rows.");
+
+                const tasks = parsedData.map(row => ({
+                    data: row,
+                    external_ref: row.id || row.email || null // attempt to pull a useful ref id from standard names
+                }));
+
+                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/tasks/create.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        workflow_id: workflowId,
+                        tasks: tasks
+                    })
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || "Failed to create task batch");
                 }
-            }
 
-            setResult(output);
-            setStatus("completed");
+                const responseData = await response.json();
+                setResult({ message: responseData.message || `Successfully pushed ${tasks.length} tasks to the worker pool.` });
+                setStatus("completed");
+
+            } else {
+                // Standard Direct Execution
+                const payload = {
+                    ...formData,
+                    file: file, // Pass the actual File object
+                    fileName: file?.name,
+                    timestamp: new Date().toISOString()
+                };
+
+                const resultContext = await workflowEngine.execute(workflowId, payload, {
+                    onLog: (log) => console.log(`[App Log] ${log.message}`)
+                });
+
+                // Find the result from the media node if it exists, or the last node
+                let output = resultContext.results;
+                if (isMediaApp) {
+                    const mediaNode = workflow.nodes.find(n => n.data.type === 'mediaConvert');
+                    if (mediaNode && resultContext.results[mediaNode.id]) {
+                        output = resultContext.results[mediaNode.id];
+                    }
+                }
+
+                setResult(output);
+                setStatus("completed");
+            }
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -104,6 +159,11 @@ export default function UserApp() {
                                 <a href={result.url} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none">
                                     Download Converted File
                                 </a>
+                            ) : isBatchMode ? (
+                                <div className="text-left bg-white p-4 rounded border border-green-200">
+                                    <p className="text-sm font-medium">{result?.message || 'Tasks created successfully.'}</p>
+                                    <p className="text-xs text-gray-500 mt-2">Team members can now pick up these tasks from the dashboard.</p>
+                                </div>
                             ) : (
                                 <pre className="text-left bg-white p-2 rounded border border-green-200 overflow-auto max-h-40">
                                     {JSON.stringify(result, null, 2)}
@@ -119,8 +179,23 @@ export default function UserApp() {
                     </div>
                 ) : (
                     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                        {isMediaApp ? (
+                        {isMediaApp || isBatchMode ? (
                             <div className="space-y-4">
+                                {isBatchMode && (
+                                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                                        <div className="flex">
+                                            <div className="flex-shrink-0">
+                                                <Users className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                                            </div>
+                                            <div className="ml-3">
+                                                <h3 className="text-sm font-medium text-blue-800">Batch Assignment Mode</h3>
+                                                <div className="mt-2 text-sm text-blue-700">
+                                                    <p>Upload a CSV file containing your dependent task data. Each row will be queued as an individual task for the assigned team to complete.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-purple-400 transition-colors bg-gray-50">
                                     <div className="space-y-1 text-center">
                                         {file ? (
@@ -136,10 +211,10 @@ export default function UserApp() {
                                                 <div className="flex text-sm text-gray-600 justify-center">
                                                     <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none">
                                                         <span>Upload a file</span>
-                                                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={(e) => setFile(e.target.files[0])} required />
+                                                        <input id="file-upload" name="file-upload" type="file" accept={isBatchMode ? ".csv" : "*"} className="sr-only" onChange={(e) => setFile(e.target.files[0])} required />
                                                     </label>
                                                 </div>
-                                                <p className="text-xs text-gray-500">Audio, Video, Images, or Documents</p>
+                                                <p className="text-xs text-gray-500">{isBatchMode ? "CSV Files Only" : "Audio, Video, Images, or Documents"}</p>
                                             </>
                                         )}
                                     </div>
@@ -221,7 +296,7 @@ export default function UserApp() {
                                     Processing...
                                 </>
                             ) : (
-                                isMediaApp ? 'Convert File' : 'Run App'
+                                isBatchMode ? 'Push Tasks to Queue' : isMediaApp ? 'Convert File' : 'Run App'
                             )}
                         </button>
                     </form>
