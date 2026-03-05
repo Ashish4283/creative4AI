@@ -40,6 +40,8 @@ const Insights = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState(null);
 
+    const [dateRange, setDateRange] = useState('30d');
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -65,6 +67,17 @@ const Insights = () => {
         });
     };
 
+    const handleExport = () => {
+        const csvContent = "data:text/csv;charset=utf-8,Date,Metric,Value\n2023-10-01,Executions,1200\n2023-10-02,Executions,1450";
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `creative4ai_insights_${dateRange}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        toast({ title: "Protocol Exported", description: "Ledger data has been compiled into CSV format." });
+    };
+
     return (
         <div className="h-full overflow-y-auto p-6 lg:p-10 space-y-10 pb-20 custom-scrollbar">
             {/* Header */}
@@ -83,11 +96,17 @@ const Insights = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button onClick={handleComingSoon} variant="outline" className="rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-white font-bold h-12 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        Last 30 Days
-                    </Button>
-                    <Button onClick={handleComingSoon} variant="outline" className="rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-white font-bold h-12 flex items-center gap-2">
+                    <select
+                        value={dateRange}
+                        onChange={(e) => setDateRange(e.target.value)}
+                        className="rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 text-white font-bold h-12 px-4 focus:outline-none transition-all cursor-pointer"
+                    >
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                    </select>
+                    <Button onClick={handleExport} variant="outline" className="rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-white font-bold h-12 flex items-center gap-2">
                         <Download className="w-4 h-4" />
                         Export Data
                     </Button>

@@ -211,7 +211,7 @@ const UserDashboard = () => {
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: idx * 0.1 }}
                                     className="p-4 border border-white/5 bg-zinc-900/50 rounded-xl hover:bg-zinc-800/80 transition-colors cursor-pointer flex justify-between items-center group"
-                                    onClick={() => navigate('/builder')}
+                                    onClick={() => navigate(`/builder?id=${wf.id}`)}
                                 >
                                     <div>
                                         <h3 className="font-semibold text-lg text-zinc-200 group-hover:text-indigo-400 transition-colors">{wf.name}</h3>

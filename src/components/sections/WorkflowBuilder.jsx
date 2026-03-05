@@ -985,11 +985,26 @@ const WorkflowBuilder = () => {
           <div className="w-[1px] h-6 bg-white/5 mx-1" />
 
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={() => setIsHistoryOpen(true)}>
+            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={() => setIsHistoryOpen(true)} title="Execution History">
               <History className="w-5 h-5" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={handleExport}>
+            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={handleExport} title="Export Workflow (JSON)">
               <Download className="w-5 h-5" />
+            </Button>
+            <div className="relative group">
+              <Button size="sm" variant="ghost" className="h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400" onClick={() => document.getElementById('import-workflow-input').click()} title="Import Workflow (JSON)">
+                <Upload className="w-5 h-5" />
+              </Button>
+              <input
+                id="import-workflow-input"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </div>
+            <Button size="sm" variant="ghost" className={cn("h-9 w-9 p-0 rounded-xl hover:bg-white/5 text-slate-400", storageMode === 'filesystem' && "text-emerald-500 bg-emerald-500/10")} onClick={connectLocalFolder} title="Connect Local Folder (Dev Mode)">
+              <HardDrive className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -1225,15 +1240,32 @@ const WorkflowBuilder = () => {
               ) : (
                 <>
                   <div className="px-3 py-2 text-xs text-slate-500 font-medium uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">Add Node</div>
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('aiNode', 'AI Model', contextMenu)}>
-                    <Brain className="w-4 h-4 text-purple-500" /> AI Model
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('apiNode', 'External API', contextMenu)}>
-                    <Webhook className="w-4 h-4 text-blue-500" /> External API
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('logicNode', 'Logic Gate', contextMenu)}>
-                    <GitBranch className="w-4 h-4 text-cyan-500" /> Logic Gate
-                  </button>
+                  <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('aiNode', 'AI Model', contextMenu)}>
+                      <Brain className="w-4 h-4 text-purple-500" /> AI Model
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('vapiBpoNode', 'AI BPO Agent', contextMenu)}>
+                      <Phone className="w-4 h-4 text-indigo-400" /> AI BPO Agent
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('apiNode', 'External API', contextMenu)}>
+                      <Webhook className="w-4 h-4 text-blue-500" /> External API
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('logicNode', 'Logic Gate', contextMenu)}>
+                      <GitBranch className="w-4 h-4 text-cyan-500" /> Logic Gate
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('ifNode', 'If / Else', contextMenu)}>
+                      <GitBranch className="w-4 h-4 text-indigo-500" /> If / Else
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('pythonNode', 'Python Script', contextMenu)}>
+                      <FileCode className="w-4 h-4 text-yellow-500" /> Python Script
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('driveNode', 'Google Drive', contextMenu)}>
+                      <Cloud className="w-4 h-4 text-blue-500" /> Google Drive
+                    </button>
+                    <button className="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded flex items-center gap-2" onClick={() => addNodeAtLocation('browserNode', 'Web Scraper', contextMenu)}>
+                      <Search className="w-4 h-4 text-orange-400" /> Web Scraper
+                    </button>
+                  </div>
                 </>
               )}
               {/* Close Overlay */}

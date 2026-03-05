@@ -61,6 +61,9 @@ const Credentials = () => {
     const [creds, setCreds] = useState([]);
     const [clusters, setClusters] = useState([]);
 
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newCred, setNewCred] = useState({ name: '', type: 'api_key', value: '', cluster_id: '' });
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
@@ -82,9 +85,22 @@ const Credentials = () => {
     }, []);
 
     const handleAdd = () => {
-        // In this phase, we just show the protocol initialization
-        // Next phase: add a modal to capture the key/value
-        toast({ title: "Secure Vault Entry", description: "Protocol for new credential ingestion initialized." });
+        setIsAddModalOpen(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await saveCredential(newCred.name, newCred.type, newCred.value, newCred.cluster_id);
+            if (res.status === 'success') {
+                toast({ title: "Vault Synced", description: "Credential has been safely stored in the master ledger." });
+                setIsAddModalOpen(false);
+                setNewCred({ name: '', type: 'api_key', value: '', cluster_id: '' });
+                fetchData();
+            }
+        } catch (error) {
+            toast({ title: "Vault Error", description: error.message, variant: "destructive" });
+        }
     };
 
     return (
@@ -163,6 +179,71 @@ const Credentials = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Add Credential Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="glass-effect p-8 rounded-[3rem] border border-white/10 w-full max-w-md shadow-2xl relative"
+                    >
+                        <Button variant="ghost" size="icon" className="absolute top-6 right-6 text-slate-400" onClick={() => setIsAddModalOpen(false)}>
+                            <X className="w-5 h-5" />
+                        </Button>
+                        <h2 className="text-2xl font-bold text-white mb-6">Ingest New Secret</h2>
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Entity Name</label>
+                                <input
+                                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                                    placeholder="e.g. Production OpenAI Key"
+                                    value={newCred.name}
+                                    onChange={e => setNewCred({ ...newCred, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Protocol Type</label>
+                                <select
+                                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value={newCred.type}
+                                    onChange={e => setNewCred({ ...newCred, type: e.target.value })}
+                                >
+                                    <option value="api_key">API Key (Standard)</option>
+                                    <option value="oauth">OAuth Token</option>
+                                    <option value="db_string">Database Connection</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Secret Value</label>
+                                <input
+                                    type="password"
+                                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                                    placeholder="sk-..."
+                                    value={newCred.value}
+                                    onChange={e => setNewCred({ ...newCred, value: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Assign to Cluster</label>
+                                <select
+                                    className="w-full bg-slate-950 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary"
+                                    value={newCred.cluster_id}
+                                    onChange={e => setNewCred({ ...newCred, cluster_id: e.target.value })}
+                                >
+                                    <option value="">Global (All Clusters)</option>
+                                    {clusters.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <Button type="submit" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-lg shadow-xl shadow-primary/20 transition-all active:scale-95">
+                                Lock into Vault
+                            </Button>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

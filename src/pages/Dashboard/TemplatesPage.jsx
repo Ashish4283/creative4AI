@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/use-toast';
 
 const TemplatesPage = () => {
+    const [selectedCategory, setSelectedCategory] = useState('All Engines');
     const scrollToGallery = () => {
         const gallery = document.getElementById('blueprint-gallery');
         if (gallery) {
@@ -18,8 +19,8 @@ const TemplatesPage = () => {
         }
     };
 
-    const handleComingSoon = () => {
-        toast({ title: "Documentation Protocol", description: "This knowledge vault is being synchronized with the latest engine updates." });
+    const handleBrowseDocs = () => {
+        window.open('https://docs.creative4ai.com', '_blank');
     };
 
     const handleExpertConnect = () => {
@@ -54,7 +55,7 @@ const TemplatesPage = () => {
                         <Button onClick={scrollToGallery} className="bg-white text-primary hover:bg-white/90 rounded-2xl h-14 px-10 font-black text-base shadow-2xl active:scale-95 transition-all flex items-center gap-3">
                             <Zap className="w-5 h-5" /> Start Cloning
                         </Button>
-                        <Button onClick={handleComingSoon} variant="ghost" className="text-white h-14 px-8 rounded-2xl font-bold hover:bg-white/10 border border-white/10 backdrop-blur-md">
+                        <Button onClick={handleBrowseDocs} variant="ghost" className="text-white h-14 px-8 rounded-2xl font-bold hover:bg-white/10 border border-white/10 backdrop-blur-md">
                             Browse Docs
                         </Button>
                     </div>
@@ -65,12 +66,13 @@ const TemplatesPage = () => {
             <div id="blueprint-gallery" className="space-y-8 scroll-mt-10">
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
                     <div className="flex items-center gap-4 bg-white/5 p-1 rounded-2xl border border-white/5 shadow-xl scroll-auto overflow-x-auto no-scrollbar max-w-full">
-                        {['All Engines', 'AI Agents', 'Data Pipes', 'DevOps', 'Marketing', 'Automation'].map((cat, i) => (
+                        {['All Engines', 'AI Agents', 'Data Pipes', 'DevOps', 'Marketing', 'Automation'].map((cat) => (
                             <button
                                 key={cat}
+                                onClick={() => setSelectedCategory(cat)}
                                 className={cn(
                                     "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                                    i === 0 ? "bg-white text-zinc-950 shadow-lg shadow-white/10" : "text-slate-500 hover:text-white"
+                                    selectedCategory === cat ? "bg-white text-zinc-950 shadow-lg shadow-white/10" : "text-slate-500 hover:text-white"
                                 )}
                             >
                                 {cat}
@@ -89,7 +91,7 @@ const TemplatesPage = () => {
                 </div>
 
                 {/* Integration of Existing Gallery */}
-                <TemplateGallery />
+                <TemplateGallery filterCategory={selectedCategory} />
             </div>
 
             {/* Scale Call to Action */}

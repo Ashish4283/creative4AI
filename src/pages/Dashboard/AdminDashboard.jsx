@@ -442,9 +442,39 @@ const AdminDashboard = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-8 py-6 text-right">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-white rounded-lg">
-                                                            <MoreVertical className="w-4 h-4" />
-                                                        </Button>
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-slate-500 hover:text-primary rounded-lg"
+                                                                onClick={() => {
+                                                                    const newRole = u.role === 'admin' ? 'tech_user' : 'admin';
+                                                                    updateUserRole(u.id, newRole).then(() => {
+                                                                        toast({ title: "Role Updated", description: `${u.name}'s protocol level changed to ${newRole}.` });
+                                                                        fetchData();
+                                                                    });
+                                                                }}
+                                                                title="Shift Role"
+                                                            >
+                                                                <Shield className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-slate-500 hover:text-red-400 rounded-lg"
+                                                                onClick={() => {
+                                                                    if (confirm(`Decommission entity ${u.name}? This cannot be undone.`)) {
+                                                                        deleteUser(u.id).then(() => {
+                                                                            toast({ title: "Entity Decommissioned", description: `${u.name} has been removed from the directory.` });
+                                                                            fetchData();
+                                                                        });
+                                                                    }
+                                                                }}
+                                                                title="Decommission"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
                                                     </td>
                                                 </motion.tr>
                                             ))}
@@ -514,7 +544,15 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
 
-                                    <Button variant="ghost" className="w-full mt-4 rounded-xl bg-white/5 hover:bg-primary hover:text-white group/btn gap-2 h-11">
+                                    <Button
+                                        onClick={() => {
+                                            setActiveTab('identities');
+                                            setSelectedGroupId('all');
+                                            setSearchTerm(org.name);
+                                            toast({ title: "Focusing Organization", description: `Loading personnel directory for ${org.name}.` });
+                                        }}
+                                        variant="ghost" className="w-full mt-4 rounded-xl bg-white/5 hover:bg-primary hover:text-white group/btn gap-2 h-11"
+                                    >
                                         Manage Org <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                                     </Button>
                                 </div>

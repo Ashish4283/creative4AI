@@ -259,9 +259,30 @@ const TeamHQ = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-white rounded-lg transition-all">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-500 hover:text-primary rounded-lg"
+                                                        onClick={() => toast({ title: "Profile Access", description: `Loading personnel profile for ${member.name}.` })}
+                                                        title="Manage Member"
+                                                    >
+                                                        <UserCog className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-slate-500 hover:text-red-400 rounded-lg"
+                                                        onClick={() => {
+                                                            if (confirm(`Remove ${member.name} from your squad?`)) {
+                                                                toast({ title: "Squad Rebalanced", description: `Entity ${member.name} has been reassigned to external duties.` });
+                                                            }
+                                                        }}
+                                                        title="Decommission"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

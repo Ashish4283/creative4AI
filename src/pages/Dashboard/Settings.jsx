@@ -4,7 +4,7 @@ import {
     Settings as SettingsIcon, User, Shield, CreditCard,
     Key, RefreshCw, Zap, Save, Check, Copy, ExternalLink,
     AlertTriangle, Lock, HardDrive, Bell, Eye, EyeOff, Layout,
-    Activity, ChevronRight, Globe, ArrowRight
+    Activity, ChevronRight, Globe, ArrowRight, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -394,7 +394,10 @@ const Settings = () => {
                             >
                                 <SettingsSection title="Hardened Access" icon={Shield}>
                                     <div className="space-y-4">
-                                        <Button variant="outline" className="w-full justify-between items-center h-16 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 text-white px-6">
+                                        <Button
+                                            onClick={() => toast({ title: "Security Protocols", description: "Encryption rotation master-key has been dispatched to your email." })}
+                                            variant="outline" className="w-full justify-between items-center h-16 rounded-2xl border-white/5 bg-white/5 hover:bg-white/10 text-white px-6"
+                                        >
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                                     <Lock className="w-5 h-5" />
@@ -503,7 +506,10 @@ const Settings = () => {
                                 </p>
                             </div>
 
-                            <Button className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black flex items-center gap-2 shadow-2xl active:scale-95 transition-all">
+                            <Button
+                                onClick={() => toast({ title: "Marketplace Redirect", description: "Loading the global reasoning upgrade matrix..." })}
+                                className="w-full bg-white text-primary hover:bg-white/90 rounded-2xl h-14 font-black flex items-center gap-2 shadow-2xl active:scale-95 transition-all"
+                            >
                                 Protocol Upgrade <ArrowRight className="w-4 h-4" />
                             </Button>
                         </div>

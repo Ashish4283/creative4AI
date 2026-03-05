@@ -10,15 +10,17 @@ import {
     Clock,
     Zap,
     History,
-    TrendingUp
+    TrendingUp,
+    Shield as ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { getWorkflows } from '@/services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ProductionApps = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [apps, setApps] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -117,7 +119,10 @@ const ProductionApps = () => {
                                     <TrendingUp className="w-4 h-4 mr-2" /> Launch
                                 </Link>
                             </Button>
-                            <Button variant="outline" className="h-11 w-11 p-0 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white">
+                            <Button
+                                onClick={() => navigate(`/executions?workflow_id=${app.id}`)}
+                                variant="outline" className="h-11 w-11 p-0 rounded-xl border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+                            >
                                 <Activity className="w-4 h-4" />
                             </Button>
                         </div>

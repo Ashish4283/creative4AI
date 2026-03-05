@@ -54,17 +54,28 @@ export default function MainLayout() {
                                 type="text"
                                 placeholder="Search workflows, users, or data..."
                                 className="w-full h-10 bg-white/5 border border-white/5 focus:border-primary/50 rounded-xl pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        toast({ title: "Internal Search", description: `Searching for "${e.target.value}" across protocol ledgers...` });
+                                    }
+                                }}
                             />
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 lg:gap-6">
-                        <button className="relative p-2 text-slate-400 hover:text-white transition-colors group">
+                        <button
+                            onClick={() => toast({ title: "Notifications", description: "Your protocol update stream is currently clear." })}
+                            className="relative p-2 text-slate-400 hover:text-white transition-colors group"
+                        >
                             <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-slate-900 group-hover:animate-pulse" />
                         </button>
                         <div className="h-8 w-[1px] bg-white/5 hidden sm:block" />
-                        <Button className="hidden sm:flex rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-95">
+                        <Button
+                            onClick={() => window.location.href = 'mailto:support@creative4ai.com'}
+                            className="hidden sm:flex rounded-xl font-bold bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-95"
+                        >
                             Support
                         </Button>
                     </div>

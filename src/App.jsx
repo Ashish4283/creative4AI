@@ -12,8 +12,6 @@ import AuthLayout from './components/auth/AuthLayout';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import UserDashboard from './pages/Dashboard/UserDashboard';
-...
-<Route path="/dashboard" element={<UserDashboard />} />
 import AdminDashboard from './pages/Dashboard/AdminDashboard.jsx';
 import TeamHQ from './pages/Dashboard/TeamHQ.jsx';
 import Settings from './pages/Dashboard/Settings.jsx';

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
     Activity, Play, CheckCircle, X, Clock,
     ChevronRight, Search, Filter, History, Trash2,
-    Eye, Download, MoreVertical, RefreshCw
+    Eye, Download, MoreVertical, RefreshCw, XCircle, ArrowRight, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
