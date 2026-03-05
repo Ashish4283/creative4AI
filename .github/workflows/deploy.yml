@@ -91,10 +91,11 @@ jobs:
           echo "Initiating robust parallel mirror via lftp..."
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" "$FTP_SERVER" <<EOF
             set ssl:verify-certificate no
-            set net:timeout 10
-            set net:max-retries 3
+            set net:timeout 30
+            set net:max-retries 5
+            set ftp:passive-mode true
             set net:reconnect-interval-base 5
-            mirror --reverse --delete --parallel=10 \
+            mirror --reverse --delete --parallel=2 \
                    --exclude .env --exclude .git/ --exclude .gitattributes \
                    dist/ .
             bye
