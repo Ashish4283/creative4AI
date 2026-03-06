@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Search, Edit2, Zap, Activity, Shield, Link, ChevronRight, Clock, X,
-    Settings, Globe, Database, HelpCircle, Layers, Cpu, Server, Code, FileCode
+    Settings, Globe, Database, HelpCircle, Layers, Cpu, Server, Code, FileCode,
+    Bot, Phone, ArrowRightLeft, LayoutPanelLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
