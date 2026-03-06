@@ -367,7 +367,7 @@ export default function KnowledgeBase() {
     const fetchKnowledgeBase = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('saas_token');
             const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
             const res = await fetch(`${baseUrl}/api/knowledge-base.php`, {
                 headers: { 'Authorization': `Bearer ${token}` }
