@@ -599,27 +599,29 @@ export default function KnowledgeBase() {
                 {/* Main Content Area */}
                 <div className="flex-1 space-y-8">
                     {/* Tabs */}
-                    <div className="flex flex-wrap items-center gap-2 bg-slate-900/50 p-1.5 rounded-full border border-white/5 w-fit">
-                        {["Core Logic", "Flow Control", "System Plugins", "Builder Features", "Detailed Directory"].map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setSelectedTab(tab)}
-                                className={cn(
-                                    "px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2",
-                                    selectedTab === tab
-                                        ? "bg-slate-800 text-white shadow-sm"
-                                        : "text-slate-400 hover:text-slate-200"
-                                )}
-                            >
-                                {tab === 'Core Logic' && <Settings className="w-3.5 h-3.5" />}
-                                {tab === 'Flow Control' && <Activity className="w-3.5 h-3.5" />}
-                                {tab === 'System Plugins' && <Globe className="w-3.5 h-3.5" />}
-                                {tab === 'Builder Features' && <Edit2 className="w-3.5 h-3.5" />}
-                                {tab === 'Detailed Directory' && <ChevronRight className="w-3.5 h-3.5" />}
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
+                    {selectedCategory === "Process Builder Nodes Details" && (
+                        <div className="flex flex-wrap items-center gap-2 bg-slate-900/50 p-1.5 rounded-full border border-white/5 w-fit">
+                            {["Core Logic", "Flow Control", "System Plugins", "Builder Features", "Detailed Directory"].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setSelectedTab(tab)}
+                                    className={cn(
+                                        "px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2",
+                                        selectedTab === tab
+                                            ? "bg-slate-800 text-white shadow-sm"
+                                            : "text-slate-400 hover:text-slate-200"
+                                    )}
+                                >
+                                    {tab === 'Core Logic' && <Settings className="w-3.5 h-3.5" />}
+                                    {tab === 'Flow Control' && <Activity className="w-3.5 h-3.5" />}
+                                    {tab === 'System Plugins' && <Globe className="w-3.5 h-3.5" />}
+                                    {tab === 'Builder Features' && <Edit2 className="w-3.5 h-3.5" />}
+                                    {tab === 'Detailed Directory' && <ChevronRight className="w-3.5 h-3.5" />}
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Content */}
                     <div className="min-h-[400px]">
