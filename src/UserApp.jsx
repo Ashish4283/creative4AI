@@ -88,7 +88,7 @@ export default function UserApp() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('saas_token')}`
                     },
                     body: JSON.stringify({
                         workflow_id: workflowId,
