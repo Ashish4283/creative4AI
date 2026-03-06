@@ -77,9 +77,19 @@ try {
     }
   }
   
+  // Debug: Count total rows in table regardless of filter
+  $countAll = $pdo->query("SELECT COUNT(*) FROM workflows")->fetchColumn();
+
   echo json_encode([
       "status" => "success",
-      "data" => $rows
+      "data" => $rows,
+      "debug_info" => [
+          "user_id" => $currentUserId,
+          "role" => $currentUserRole,
+          "group_id" => $myGroupId,
+          "total_rows_in_db" => $countAll,
+          "query_used" => $query
+      ]
   ]);
 
 } catch (Exception $e) {

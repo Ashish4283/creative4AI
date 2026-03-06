@@ -641,6 +641,7 @@ const WorkflowBuilder = () => {
 
   const loadWorkflowList = async () => {
     const list = await storageAdapter.setApi().listWorkflows(user?.id);
+    console.log("DEBUG: listWorkflows response:", list);
     setSavedWorkflows(list);
   };
 
@@ -748,8 +749,15 @@ const WorkflowBuilder = () => {
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
-    await storageAdapter.deleteWorkflow(id);
-    loadWorkflowList();
+    try {
+      if (confirm("Are you sure you want to delete this workflow? This action cannot be undone.")) {
+        await storageAdapter.setApi().deleteWorkflow(id);
+        toast({ title: "Workflow Deleted", description: "Remote architecture purged." });
+        loadWorkflowList();
+      }
+    } catch (err) {
+      toast({ title: "Delete Failed", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleClone = () => {

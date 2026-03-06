@@ -111,6 +111,17 @@ export const rollbackWorkflow = async (id) => {
     }
 };
 
+export const deleteWorkflow = async (id) => {
+    try {
+        return await fetchWithAuth(`/delete-workflow.php?id=${id}`, {
+            method: 'DELETE'
+        });
+    } catch (error) {
+        console.error("Error deleting workflow:", error);
+        throw error;
+    }
+};
+
 export const saveWorkflow = async (workflowData) => {
     try {
         return await fetchWithAuth(`/save-workflow.php`, {

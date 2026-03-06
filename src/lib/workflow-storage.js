@@ -2,7 +2,8 @@ import {
     getWorkflows as fetchWorkflows,
     saveWorkflow as uploadWorkflow,
     pushWorkflow,
-    rollbackWorkflow
+    rollbackWorkflow,
+    deleteWorkflow as apiDeleteWorkflow
 } from '../services/api.js';
 
 /**
@@ -394,6 +395,7 @@ export class ApiAdapter extends StorageAdapter {
     async listWorkflows(userId = 1) {
         try {
             const response = await fetchWorkflows(); // No need to pass userId, it's in the JWT
+            console.log("RAW API Response:", response);
             return response.data.map(w => ({
                 ...w.builder_json,
                 id: w.id,
@@ -407,7 +409,12 @@ export class ApiAdapter extends StorageAdapter {
     }
 
     async deleteWorkflow(id) {
-        console.warn("API deleteWorkflow not implemented on backend.");
+        try {
+            return await apiDeleteWorkflow(id);
+        } catch (error) {
+            console.error("API Delete Error:", error);
+            throw new Error("Failed to delete workflow from API.");
+        }
     }
 
     async promoteWorkflow(id, targetEnvironment) {
