@@ -363,6 +363,7 @@ export default function KnowledgeBase() {
     const [dbContent, setDbContent] = useState({});
     const [loading, setLoading] = useState(true);
     const [selectedDeepDive, setSelectedDeepDive] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const fetchKnowledgeBase = async () => {
         try {
@@ -421,17 +422,49 @@ export default function KnowledgeBase() {
         if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500 animate-pulse">Loading intelligence...</p></div>;
 
         let cardsToRender = [];
-        // Map database keys: 'core', 'flow', 'plugins', 'builder'
-        if (selectedTab === 'Core Logic') {
-            cardsToRender = dbContent['core'] ? dbContent['core'] : coreLogicCards;
-        } else if (selectedTab === 'Flow Control') {
-            cardsToRender = dbContent['flow'] ? dbContent['flow'] : flowControlCards;
-        } else if (selectedTab === 'System Plugins') {
-            cardsToRender = dbContent['plugins'] ? dbContent['plugins'] : systemPluginsCards;
-        } else if (selectedTab === 'Builder Features') {
-            cardsToRender = dbContent['builder'] ? dbContent['builder'] : [];
-        } else {
-            cardsToRender = [];
+        if (selectedCategory === "Process Builder Nodes Details") {
+            if (selectedTab === 'Core Logic') {
+                cardsToRender = dbContent['core'] ? dbContent['core'] : coreLogicCards;
+            } else if (selectedTab === 'Flow Control') {
+                cardsToRender = dbContent['flow'] ? dbContent['flow'] : flowControlCards;
+            } else if (selectedTab === 'System Plugins') {
+                cardsToRender = dbContent['plugins'] ? dbContent['plugins'] : systemPluginsCards;
+            } else if (selectedTab === 'Builder Features') {
+                cardsToRender = dbContent['builder'] ? dbContent['builder'] : [];
+            } else if (selectedTab === 'Detailed Directory') {
+                // Combine all cards for the directory view
+                cardsToRender = [
+                    ...(dbContent['core'] || coreLogicCards),
+                    ...(dbContent['flow'] || flowControlCards),
+                    ...(dbContent['plugins'] || systemPluginsCards)
+                ];
+            }
+        } else if (selectedCategory === "Getting Started Guide") {
+            cardsToRender = dbContent['getting_started'] || [
+                {
+                    title: 'Welcome to Horizon V2',
+                    description: 'Learn the basics of our new high-speed cognitive engine.',
+                    icon: Zap,
+                    howTo: ['1. Create your first workflow', '2. Configure a Start Trigger', '3. Add an AI Model node']
+                }
+            ];
+        } else if (selectedCategory === "Integrations & APIs") {
+            cardsToRender = dbContent['integrations'] || [
+                {
+                    title: 'Connecting External Apps',
+                    description: 'How to use Webhooks and HTTP Request nodes to bridge intelligence.',
+                    icon: Globe,
+                    howTo: ['1. Copy Webhook URL', '2. Paste in Shopify/Stripe/Hubspot', '3. Map incoming fields']
+                }
+            ];
+        }
+
+        // Apply Search Filter
+        if (searchQuery) {
+            cardsToRender = cardsToRender.filter(card =>
+                card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                card.description.toLowerCase().includes(searchQuery.toLowerCase())
+            );
         }
 
         if (cardsToRender.length === 0) {
@@ -527,6 +560,8 @@ export default function KnowledgeBase() {
                         <input
                             type="text"
                             placeholder="Search knowledge articles..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-card border border-white/10 rounded-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder:text-slate-500 shadow-inner"
                         />
                     </div>
