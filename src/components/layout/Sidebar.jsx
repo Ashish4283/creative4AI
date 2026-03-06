@@ -21,7 +21,8 @@ import {
     Zap,
     Menu,
     Monitor,
-    Building
+    Building,
+    BookOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
@@ -78,6 +79,8 @@ export default function Sidebar({ isCollapsed = false, onCollapse = () => { }, o
     mainLinks.push({ to: '/prod-apps', icon: Monitor, label: 'App Production Dashboard' });
 
     mainLinks.push({ to: '/executions', icon: Activity, label: 'Execution Logs' });
+
+    mainLinks.push({ to: '/knowledge-base', icon: BookOpen, label: 'Knowledge Base' });
 
     if (!isAgent) {
         mainLinks.push({ to: '/templates', icon: Layout, label: 'Templates' });

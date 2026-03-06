@@ -23,6 +23,7 @@ import TestApps from './pages/Dashboard/TestApps.jsx';
 import ProductionApps from './pages/Dashboard/ProductionApps.jsx';
 import InvitePage from './pages/InvitePage.jsx';
 import LegalPage from './pages/LegalPage.jsx';
+import KnowledgeBase from './pages/Dashboard/KnowledgeBase.jsx';
 import MainLayout from './components/layout/MainLayout';
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
             <Route path="/insights" element={<Insights />} />
             <Route path="/team" element={<TeamHQ />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/knowledge-base" element={<KnowledgeBase />} />
           </Route>
 
           <Route element={<ProtectedRoute requiredRole="admin"><MainLayout /></ProtectedRoute>}>
