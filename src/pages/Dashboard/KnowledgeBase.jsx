@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Search, Edit2, Zap, Activity, Shield, Link, ChevronRight, Clock,
@@ -121,13 +121,78 @@ const systemPluginsCards = [
 export default function KnowledgeBase() {
     const [selectedCategory, setSelectedCategory] = useState("Process Builder Nodes Details");
     const [selectedTab, setSelectedTab] = useState("Core Logic");
+    const [dbContent, setDbContent] = useState({});
+    const [loading, setLoading] = useState(true);
+
+    const fetchKnowledgeBase = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+            const res = await fetch(`${baseUrl}/api/knowledge-base.php`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.status === 'success' && data.data && data.data.length > 0) {
+                // Convert array of rows [{section_id: 'core', content_json: '...'}] to a JS object map
+                const mappedContent = {};
+                data.data.forEach(row => {
+                    try {
+                        mappedContent[row.section_id] = JSON.parse(row.content_json);
+                    } catch (e) { console.error("Parse error for sections", e); }
+                });
+                setDbContent(mappedContent);
+            }
+        } catch (err) {
+            console.error("Failed to fetch Knowledge Base from DB", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchKnowledgeBase();
+    }, []);
+
+    // Format DB response to match our local UI components (mapping specific string icons back to Lucide components if needed)
+    const mapIconString = (iconName) => {
+        const iconMap = {
+            'Zap': Zap,
+            'Activity': Activity,
+            'Shield': Shield,
+            'Link': Link,
+            'Clock': Clock,
+            'ArrowRightLeft': Layers,
+            'Database': Database,
+            'Brain': Cpu,
+            'Monitor': Globe,
+            'Search': Search,
+            'Webhook': Globe,
+            'Terminal': Code,
+            'FileCode': FileCode,
+            'Cloud': Database,
+            'Save': Database,
+            'Wand2': Edit2
+        };
+        return iconMap[iconName] || HelpCircle;
+    };
 
     const renderCards = () => {
+        if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500 animate-pulse">Loading intelligence...</p></div>;
+
         let cardsToRender = [];
-        if (selectedTab === 'Core Logic') cardsToRender = coreLogicCards;
-        else if (selectedTab === 'Flow Control') cardsToRender = flowControlCards;
-        else if (selectedTab === 'System Plugins') cardsToRender = systemPluginsCards;
-        else cardsToRender = []; // Placeholder for others
+        // Map database keys: 'core', 'flow', 'plugins', 'builder'
+        if (selectedTab === 'Core Logic') {
+            cardsToRender = dbContent['core'] ? dbContent['core'] : coreLogicCards;
+        } else if (selectedTab === 'Flow Control') {
+            cardsToRender = dbContent['flow'] ? dbContent['flow'] : flowControlCards;
+        } else if (selectedTab === 'System Plugins') {
+            cardsToRender = dbContent['plugins'] ? dbContent['plugins'] : systemPluginsCards;
+        } else if (selectedTab === 'Builder Features') {
+            cardsToRender = dbContent['builder'] ? dbContent['builder'] : [];
+        } else {
+            cardsToRender = [];
+        }
 
         if (cardsToRender.length === 0) {
             return (
@@ -140,49 +205,56 @@ export default function KnowledgeBase() {
 
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {cardsToRender.map((card, i) => (
-                    <div key={i} className="glass-effect bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl hover:border-primary/30 transition-all hover:bg-slate-900/60 relative overflow-hidden group">
-                        <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-950 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
-                                {typeof card.icon === 'function' ? <card.icon /> : <card.icon className="w-5 h-5 text-amber-500" />}
+                {cardsToRender.map((card, i) => {
+                    // Check if it's from DB (string icon) or local (functional/element icon)
+                    const IconToRender = typeof card.icon === 'string' ? mapIconString(card.icon) : (typeof card.icon === 'function' ? card.icon : card.icon);
+                    return (
+                        <div key={i} className="glass-effect bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl hover:border-primary/30 transition-all hover:bg-slate-900/60 relative overflow-hidden group">
+                            <div className="flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-xl bg-slate-950 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                                    <IconToRender className={`w-5 h-5 ${card.color || 'text-amber-500'}`} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white tracking-tight">{card.title}</h3>
+                                    <p className="text-sm text-slate-400 mt-1 whitespace-pre-wrap">{card.description}</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-white tracking-tight">{card.title}</h3>
-                                <p className="text-sm text-slate-400 mt-1">{card.description}</p>
-                            </div>
+
+                            {/* Render "HOW TO CONFIGURE" differently based on if it's an Array (local file) or string inside description (seeded DB) */}
+                            {card.howTo && (
+                                <div className="pt-4 border-t border-white/5 space-y-3">
+                                    <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">HOW TO CONFIGURE:</h4>
+                                    <div className="space-y-1">
+                                        {(Array.isArray(card.howTo) ? card.howTo : [card.howTo]).map((step, idx) => (
+                                            <p key={idx} className="text-xs text-slate-300 leading-relaxed">{step}</p>
+                                        ))}
+                                    </div>
+
+                                    {card.proTip && (
+                                        <p className="text-xs text-slate-300 leading-relaxed mt-4">
+                                            <span className="font-bold text-slate-400 uppercase">PRO TIP: </span>
+                                            {card.proTip}
+                                        </p>
+                                    )}
+
+                                    {card.action && (
+                                        <p className="text-xs text-slate-300 leading-relaxed mt-4">
+                                            <span className="font-bold text-slate-400 uppercase">ACTION: </span>
+                                            {card.action}
+                                        </p>
+                                    )}
+
+                                    {card.useCase && (
+                                        <p className="text-xs text-slate-300 leading-relaxed mt-4">
+                                            <span className="font-bold text-slate-400 uppercase">USE CASE: </span>
+                                            {card.useCase}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
-
-                        <div className="pt-4 border-t border-white/5 space-y-3">
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">HOW TO CONFIGURE:</h4>
-                            <div className="space-y-1">
-                                {card.howTo.map((step, idx) => (
-                                    <p key={idx} className="text-xs text-slate-300 leading-relaxed">{step}</p>
-                                ))}
-                            </div>
-
-                            {card.proTip && (
-                                <p className="text-xs text-slate-300 leading-relaxed mt-4">
-                                    <span className="font-bold text-slate-400 uppercase">PRO TIP: </span>
-                                    {card.proTip}
-                                </p>
-                            )}
-
-                            {card.action && (
-                                <p className="text-xs text-slate-300 leading-relaxed mt-4">
-                                    <span className="font-bold text-slate-400 uppercase">ACTION: </span>
-                                    {card.action}
-                                </p>
-                            )}
-
-                            {card.useCase && (
-                                <p className="text-xs text-slate-300 leading-relaxed mt-4">
-                                    <span className="font-bold text-slate-400 uppercase">USE CASE: </span>
-                                    {card.useCase}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         );
     };
