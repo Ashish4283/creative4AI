@@ -65,18 +65,109 @@ $content = [
             ]
         ]
     ],
-    "flow" => [
         [
             "title" => "Wait / Delay",
             "icon" => "Clock",
             "description" => "Control the timing of your operations.",
-            "color" => "text-rose-400"
+            "color" => "text-rose-400",
+            "deepDive" => [
+                "overview" => "What is a Wait / Delay Node?\nA functional node designed to pause the cognitive thread of an autonomous workflow. This is crucial for rate-limiting, human-in-the-loop dependencies, or naturalized AI cadences.",
+                "sections" => [
+                    [
+                        "title" => "Configuration",
+                        "content" => "- Duration: A numerical value representing the time to pause.\n- Unit: Select between Seconds, Minutes, or Hours."
+                    ],
+                    [
+                        "title" => "Common Enterprise Use Cases",
+                        "content" => "1. Drip Campaigns: Add a 24-hour Wait node between email sends to simulate human cadences.\n2. Polling: Loop back to an API Request node with a 5-second wait to check if an external task is completed.\n3. Rate Limiting: Prevent 429 Too Many Requests errors when scraping massive databases or triggering OpenAI batches."
+                    ]
+                ]
+            ]
+        ],
+        [
+            "title" => "Merge Paths",
+            "icon" => "ArrowRightLeft",
+            "description" => "Re-converges multiple branch paths into a single pipeline.",
+            "color" => "text-cyan-400",
+            "deepDive" => [
+                "overview" => "What is a Merge Paths Node?\nWhen workflows branch out via If/Else gates, you often need them to rejoin a primary path (e.g., regardless of whether a customer bought Item A or Item B, they both get the 'Thank You' email). The Merge Path node accomplishes this.",
+                "sections" => [
+                    [
+                        "title" => "Visual Configuration",
+                        "content" => "- Connect the outputs of multiple independent nodes into the left-side input handle of this module.\n- ONLY ONE path will execute downstream when triggered, keeping your workflow singular and clean."
+                    ]
+                ]
+            ]
         ],
         [
             "title" => "Data Transformation",
             "icon" => "Database",
             "description" => "Manipulate complex JSON objects and arrays natively.",
-            "color" => "text-indigo-500"
+            "color" => "text-indigo-500",
+            "deepDive" => [
+                "overview" => "What is Data Transformation?\nEnterprise logic often involves disparate APIs. Shopify JSON looks different from Stripe JSON. This node allows you to visually map, aggregate, filter, and normalize payloads without writing custom code.",
+                "sections" => [
+                    [
+                        "title" => "Operations Available",
+                        "content" => "1. Key Mapping: Rename JSON keys to match downstream system expectations.\n2. Filter Array: Remove elements from lists based on standard logical checks (e.g. Price > 50).\n3. Extract/Aggregate: Pull out a specific column from an array of objects."
+                    ]
+                ]
+            ]
+        ]
+    ],
+    "plugins" => [
+        [
+            "title" => "AI Model",
+            "icon" => "Brain",
+            "description" => "Primary generative intelligence block.",
+            "color" => "text-purple-500",
+            "deepDive" => [
+                "overview" => "What is the AI Model Node?\nThe core reasoning engine. It allows you to inject advanced Large Language Models directly into your logical flow. You can use it to infer data, rewrite text, classify sentiment, or generate complex code structures on the fly.",
+                "sections" => [
+                    [
+                        "title" => "Configuration & Prompting",
+                        "content" => "- System Prompt: Defines the strict persona and boundaries of the AI (e.g., 'You are a strict data extractor. Return ONLY a valid JSON').\n- User Prompt: The specific task execution command. Use double curly brackets {{...}} to dynamically inject data from previous steps into the final prompt context.\n- Temperature: Set to 0.0 for strict analytical tasks. Set to 0.8+ for creative tasks."
+                    ],
+                    [
+                        "title" => "Troubleshooting Output Layouts",
+                        "content" => "Problem: The AI is returning markdown text wrapped in ```json ... ``` blocks, which breaks my downstream logic!\nFix: Explicitly tell the AI in the System prompt: 'Do not use markdown formatting. Output raw JSON ONLY.' Ensure your downstream node checks for trailing/leading characters."
+                    ]
+                ]
+            ]
+        ],
+        [
+            "title" => "API Request (Webhooks)",
+            "icon" => "Globe",
+            "description" => "Interface with any cloud software.",
+            "color" => "text-blue-500",
+            "deepDive" => [
+                "overview" => "What is the API Request Node?\nThis allows Creative4AI to talk to literally any external system on the internet. It crafts outbound HTTP requests directly from your workflow.",
+                "sections" => [
+                    [
+                        "title" => "Authentication Setup",
+                        "content" => "Click into the Headers section. Most SaaS tools use Bearer tokens.\nKey: Authorization\nValue: Bearer YOUR_SUPER_SECRET_TOKEN"
+                    ],
+                    [
+                        "title" => "Payloads (POST / PUT)",
+                        "content" => "Switch the Method to POST. Define a JSON payload in the body. You can construct dynamic JSON properties using data variables from earlier nodes, like:\n{\n  'customer_name': '{{trigger.name}}'\n}"
+                    ]
+                ]
+            ]
+        ],
+        [
+            "title" => "User App UI",
+            "icon" => "FileCode",
+            "description" => "Render interactive forms for humans.",
+            "color" => "text-pink-500",
+            "deepDive" => [
+                "overview" => "What is the User App Node?\nUnlike purely background automation, Horizon Process Builder lets you pause execution to ask a human for input. This node auto-generates a highly aesthetic web-form.",
+                "sections" => [
+                    [
+                        "title" => "Execution Suspension",
+                        "content" => "When the workflow reaches this node, it stops completely. An execution task is added to the 'Pending App' queue. Once a human navigates to the App link, fills out the requested fields, and clicks Submit, the workflow resumes with that newly acquired human data."
+                    ]
+                ]
+            ]
         ]
     ]
 ];
