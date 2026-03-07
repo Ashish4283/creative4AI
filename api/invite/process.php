@@ -81,18 +81,22 @@ try {
         // For now, let's just update their manager_id if they don't have one and set role to 'agent'
         
         $managerId = $invite['creator_id'];
-        $groupId = $invite['group_id'];
+        $clusterId = $invite['cluster_id'];
         
-        $updateStmt = $pdo->prepare("UPDATE users SET manager_id = :mid, role = 'agent', group_id = :gid WHERE id = :uid AND role = 'tech_user'");
-        $updateStmt->execute([':mid' => $managerId, ':gid' => $groupId, ':uid' => $userId]);
+        $updateStmt = $pdo->prepare("UPDATE users SET manager_id = :mid, role = 'agent' WHERE id = :uid AND role = 'tech_user'");
+        $updateStmt->execute([':mid' => $managerId, ':uid' => $userId]);
+        
+        if ($clusterId) {
+            $pdo->prepare("INSERT IGNORE INTO cluster_members (cluster_id, user_id, role) VALUES (?, ?, 'member')")->execute([$clusterId, $userId]);
+        }
         
         // Also we should track workflow access. For now, we'll just return success.
     }
 
-    if ($invite['group_id'] && $invite['type'] === 'manager_invite') {
-         // Even for manager invites, if a group is coded in, apply it to the creator (the user)
-         $stmt = $pdo->prepare("UPDATE users SET group_id = ? WHERE id = ?");
-         $stmt->execute([$invite['group_id'], $invite['creator_id']]);
+    if ($invite['cluster_id'] && $invite['type'] === 'manager_invite') {
+         // Even for manager invites, if a cluster is coded in, apply it to the creator (the user)
+         $stmt = $pdo->prepare("INSERT IGNORE INTO cluster_members (cluster_id, user_id, role) VALUES (?, ?, 'manager')");
+         $stmt->execute([$invite['cluster_id'], $invite['creator_id']]);
     }
 
     // Increment use count

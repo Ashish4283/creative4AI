@@ -7,6 +7,7 @@ const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [orgName, setOrgName] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { register, login } = useAuth();
@@ -23,7 +24,7 @@ const Register = () => {
 
         setIsLoading(true);
 
-        const result = await register(name, email, password);
+        const result = await register(name, email, password, orgName);
 
         if (result.success) {
             // Auto login after successful registration
@@ -110,6 +111,18 @@ const Register = () => {
                                 className="appearance-none block w-full px-4 py-3 border border-zinc-700 rounded-xl bg-zinc-800/50 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                                 placeholder="••••••••"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-zinc-300 mb-1">Organization Name (Optional)</label>
+                            <input
+                                type="text"
+                                value={orgName}
+                                onChange={(e) => setOrgName(e.target.value)}
+                                className="appearance-none block w-full px-4 py-3 border border-zinc-700 rounded-xl bg-zinc-800/50 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                placeholder="Your Company Ltd"
+                            />
+                            <p className="mt-1 text-xs text-zinc-500">Leaving this blank registers you as an individual unassigned entity.</p>
                         </div>
 
                         <div>
