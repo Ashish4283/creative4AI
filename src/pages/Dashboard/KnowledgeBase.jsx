@@ -507,7 +507,7 @@ export default function KnowledgeBase() {
                     return (
                         <div key={i} className="glass-effect bg-slate-900/40 p-6 rounded-2xl border border-white/5 space-y-4 shadow-xl hover:border-primary/30 transition-all hover:bg-slate-900/60 relative overflow-hidden group">
                             <div className="flex items-start gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-card border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
                                     <IconToRender className={`w-5 h-5 ${card.color || 'text-amber-500'}`} />
                                 </div>
                                 <div>
@@ -564,7 +564,7 @@ export default function KnowledgeBase() {
     };
 
     return (
-        <div className="h-full overflow-y-auto p-6 lg:p-10 pb-20 custom-scrollbar bg-background font-sans relative">
+        <div className="h-full overflow-y-auto p-6 lg:p-10 pb-20 custom-scrollbar relative text-white">
             {/* Background decorations */}
             <div className="absolute top-0 right-0 w-[800px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none -mt-40 -mr-40" />
 
@@ -585,7 +585,7 @@ export default function KnowledgeBase() {
                             placeholder="Search knowledge articles..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-card border border-white/10 rounded-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder:text-slate-500 shadow-inner"
+                            className="w-full bg-slate-950 border border-white/10 rounded-full pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 transition-all text-white placeholder:text-slate-500 shadow-inner"
                         />
                     </div>
                     <Button variant="outline" className="rounded-full border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 text-blue-400 font-medium h-10 px-6 gap-2">
