@@ -200,7 +200,7 @@ const TeamHQ = () => {
                                     value={selectedClusterId}
                                     onChange={(e) => setSelectedClusterId(e.target.value)}
                                 >
-                                    <option value="">Detached (Global Grid)</option>
+                                    <option value="">Direct Deployment (No Cluster)</option>
                                     {clusters.map(c => (
                                         <option key={c.id} value={c.id}>{c.name} {c.org_name ? `(${c.org_name})` : ''}</option>
                                     ))}
