@@ -23,11 +23,11 @@ $payload = authenticate_request();
                 u.trial_ends_at, 
                 u.manager_id,
                 u.org_id,
-                o.name as org_name,
+                IFNULL(o.name, 'Personal Account') as org_name,
                 m.name as manager_name,
                 (SELECT COUNT(*) FROM workflows WHERE user_id = u.id) as workflow_count,
-                c.id as cluster_id,
-                c.name as cluster_name
+                GROUP_CONCAT(c.name SEPARATOR ', ') as cluster_name,
+                GROUP_CONCAT(c.id SEPARATOR ',') as cluster_id
               FROM users u
               LEFT JOIN users m ON u.manager_id = m.id
               LEFT JOIN organizations o ON u.org_id = o.id
@@ -38,20 +38,17 @@ $payload = authenticate_request();
     $params = [];
 
     if ($role === 'super_admin') {
-        // sees everyone
+        // 全 - See everything
     } elseif ($role === 'admin') {
-        // sees their own organization's users
         if ($org_id) {
             $query .= " AND u.org_id = ?";
             $params[] = $org_id;
         } else {
-            // fallback: only see self and those they manage
             $query .= " AND (u.id = ? OR u.manager_id = ?)";
             $params[] = $user_id;
             $params[] = $user_id;
         }
     } elseif ($role === 'manager') {
-        // sees people they manage directly OR people in their clusters
         $query .= " AND (u.id = ? OR u.manager_id = ? OR u.id IN (
             SELECT cm2.user_id FROM cluster_members cm1
             JOIN cluster_members cm2 ON cm1.cluster_id = cm2.cluster_id
@@ -61,12 +58,11 @@ $payload = authenticate_request();
         $params[] = $user_id;
         $params[] = $user_id;
     } else {
-        // others only see themselves
         $query .= " AND u.id = ?";
         $params[] = $user_id;
     }
 
-    $query .= " ORDER BY u.created_at DESC";
+    $query .= " GROUP BY u.id ORDER BY u.created_at DESC";
 
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);

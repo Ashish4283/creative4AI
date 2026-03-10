@@ -213,18 +213,18 @@ export const updateCluster = async (id, name, description) => {
 
 // Backwards-compatibility aliases: older code imports `listGroups/createGroup/deleteGroup`
 export const listGroups = async () => {
-    return await fetchWithAuth(`/admin/groups.php`);
+    return await fetchWithAuth(`/admin/clusters.php`);
 };
 
 export const createGroup = async (name, description, orgId = null) => {
-    return await fetchWithAuth(`/admin/groups.php`, {
+    return await fetchWithAuth(`/admin/clusters.php`, {
         method: 'POST',
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({ name, description, org_id: orgId }),
     });
 };
 
 export const deleteGroup = async (id) => {
-    return await fetchWithAuth(`/admin/groups.php?id=${id}`, {
+    return await fetchWithAuth(`/admin/clusters.php?id=${id}`, {
         method: 'DELETE',
     });
 };
