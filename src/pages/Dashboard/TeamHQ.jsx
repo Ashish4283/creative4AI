@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, UserPlus, Mail, Shield,
     MoreVertical, Trash2, UserCog, Send, ExternalLink,
-    Search, Filter, Activity, CheckCircle, X
+    Search, Filter, Activity, CheckCircle, X,
+    LayoutDashboard, Cpu, Database, Workflow, Layers, Building
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,12 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { listAllUsers, generateInvite, listGroups } from '../../services/api';
+import {
+    listAllUsers,
+    generateInvite,
+    listGroups,
+    getInfrastructureMap
+} from '../../services/api';
 import UserManagement from '../../components/dashboard/UserManagement';
 
 const TeamHQ = () => {
@@ -25,30 +31,28 @@ const TeamHQ = () => {
     const [isInviteOpen, setIsInviteOpen] = useState(false);
     const [inviteLink, setInviteLink] = useState('');
     const [groups, setGroups] = useState([]);
+    const [infrastructure, setInfrastructure] = useState([]);
     const [selectedGroupId, setSelectedGroupId] = useState('');
 
     const fetchTeam = async () => {
         setIsLoading(true);
         try {
-            const [usersRes, groupsRes] = await Promise.all([
+            const [usersRes, groupsRes, infraRes] = await Promise.all([
                 listAllUsers(),
-                listGroups()
+                listGroups(),
+                getInfrastructureMap()
             ]);
 
             if (usersRes.status === 'success') {
-                if (user.role === 'super_admin') {
-                    setTeamMembers(usersRes.data);
-                } else if (user.role === 'admin') {
-                    // Admin sees their entire organization
-                    setTeamMembers(usersRes.data);
-                } else {
-                    // Manager sees their assigned subordinates
-                    setTeamMembers(usersRes.data.filter(u => u.manager_id == user.id));
-                }
+                setTeamMembers(usersRes.data);
             }
 
             if (groupsRes.status === 'success') {
                 setGroups(groupsRes.data);
+            }
+
+            if (infraRes.status === 'success') {
+                setInfrastructure(infraRes.data);
             }
         } catch (error) {
             toast({ title: "Sync Failed", description: "Could not retrieve team metrics.", variant: "destructive" });
@@ -221,6 +225,7 @@ const TeamHQ = () => {
                                 <thead>
                                     <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black bg-white/[0.01]">
                                         <th className="px-8 py-6">Member Identity</th>
+                                        <th className="px-8 py-6">Organization</th>
                                         <th className="px-8 py-6">Cluster</th>
                                         <th className="px-8 py-6">Role</th>
                                         <th className="px-8 py-6">Status</th>
@@ -242,10 +247,16 @@ const TeamHQ = () => {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                {member.group_name ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Building className="w-3.5 h-3.5 text-slate-500" />
+                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">{member.org_name || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                {member.cluster_name ? (
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                                        <span className="text-xs font-bold text-slate-300">{member.group_name}</span>
+                                                        <span className="text-xs font-bold text-slate-300">{member.cluster_name}</span>
                                                     </div>
                                                 ) : (
                                                     <span className="text-xs text-slate-600 font-bold uppercase tracking-widest italic">Detached</span>
@@ -298,6 +309,63 @@ const TeamHQ = () => {
                             )}
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Infrastructure Map */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                    <Database className="w-6 h-6 text-indigo-400" />
+                    <h2 className="text-2xl font-black text-white font-outfit uppercase tracking-tighter">Resource Architecture</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {infrastructure.map(cluster => (
+                        <div key={cluster.id} className="glass-effect p-6 rounded-[2rem] border border-white/5 space-y-4 hover:border-primary/20 transition-all group">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Layers className="w-4 h-4 text-primary" />
+                                        <span className="text-sm font-black text-white uppercase tracking-tighter">{cluster.name}</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{cluster.org_name || 'Global'}</span>
+                                </div>
+                                <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 text-[9px] font-black text-slate-400 uppercase">
+                                    {cluster.workflows?.length || 0} WORKFLOWS
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div>
+                                    <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Active Protocols</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {cluster.workflows?.length > 0 ? cluster.workflows.map(wf => (
+                                            <div key={wf.id} className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-slate-300 flex items-center gap-2">
+                                                <Workflow className="w-3 h-3 text-emerald-400" />
+                                                {wf.name}
+                                            </div>
+                                        )) : (
+                                            <span className="text-[10px] text-slate-600 italic px-1">No workflows assigned to this cluster.</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-white/5">
+                                    <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Operating Workforce</h4>
+                                    <div className="flex -space-x-2 overflow-hidden px-1">
+                                        {cluster.members?.map(member => (
+                                            <div key={member.id} className="inline-block h-8 w-8 rounded-full ring-2 ring-zinc-950 bg-indigo-500 border border-white/10 flex items-center justify-center text-[10px] font-black text-white uppercase" title={member.name}>
+                                                {member.name.charAt(0)}
+                                            </div>
+                                        ))}
+                                        {(!cluster.members || cluster.members.length === 0) && (
+                                            <span className="text-[10px] text-slate-600 italic">Unstaffed location.</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
 

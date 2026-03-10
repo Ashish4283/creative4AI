@@ -382,3 +382,7 @@ export const assignWorkflow = async (workflowId, workerId) => {
         body: JSON.stringify({ workflow_id: workflowId, worker_id: workerId }),
     });
 };
+
+export const getInfrastructureMap = async () => {
+    return await fetchWithAuth(`/admin/infrastructure-map.php`);
+};

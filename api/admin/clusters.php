@@ -17,7 +17,7 @@ try {
     switch($method) {
         case 'GET':
             $role = $payload['role'];
-            $org_id = $payload['org_id'];
+            $org_id = $payload['org_id'] ?? null;
             $userId = $payload['id'];
 
             if ($role === 'super_admin') {

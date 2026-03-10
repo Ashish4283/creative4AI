@@ -23,12 +23,16 @@ $payload = authenticate_request();
                 u.trial_ends_at, 
                 u.manager_id,
                 u.org_id,
+                o.name as org_name,
                 m.name as manager_name,
                 (SELECT COUNT(*) FROM workflows WHERE user_id = u.id) as workflow_count,
-                (SELECT cluster_id FROM cluster_members WHERE user_id = u.id LIMIT 1) as cluster_id,
-                (SELECT c.name FROM cluster_members cm JOIN clusters c ON cm.cluster_id = c.id WHERE cm.user_id = u.id LIMIT 1) as cluster_name
+                c.id as cluster_id,
+                c.name as cluster_name
               FROM users u
               LEFT JOIN users m ON u.manager_id = m.id
+              LEFT JOIN organizations o ON u.org_id = o.id
+              LEFT JOIN cluster_members cm ON u.id = cm.user_id
+              LEFT JOIN clusters c ON cm.cluster_id = c.id
               WHERE 1=1";
 
     $params = [];
