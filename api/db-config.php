@@ -198,9 +198,11 @@ try {
     $wfCols = $pdo->query("SHOW COLUMNS FROM workflows")->fetchAll(PDO::FETCH_COLUMN);
     $wfColumnMap = [
         'cluster_id' => "INT DEFAULT NULL",
+        'org_id' => "INT DEFAULT NULL",
+        'status' => "ENUM('draft', 'active', 'archived') DEFAULT 'active'",
         'environment' => "ENUM('draft', 'test', 'prod') DEFAULT 'draft'",
         'version' => "INT DEFAULT 1",
-        'parent_id' => "INT DEFAULT NULL" // To link pushed versions to their drafts
+        'parent_id' => "INT DEFAULT NULL" 
     ];
 
     foreach ($wfColumnMap as $col => $def) {
