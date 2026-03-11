@@ -31,63 +31,38 @@ jobs:
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
         run: |
           echo "Preparing .env for Vite build"
-          # Only write known VITE_ variables used by the app
           > .env
           if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then echo "VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> .env; fi
           if [ -n "$VITE_API_BASE_URL" ]; then echo "VITE_API_BASE_URL=$VITE_API_BASE_URL" >> .env; fi
           if [ -n "$VITE_GEMINI_API_KEY" ]; then echo "VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY" >> .env; fi
-          echo "Created .env with client-side variables for build"
 
       - name: Build Vite app
         run: npm run build
 
-      - name: Add debug title and version to index.html
-        run: |
-          # Add a debug title to the <head> of index.html
-          sed -i 's|<head>|<head>\n    <title>Workflow Engine Loaded: v2026.03.06-FINAL (Adv. Flow)</title>|' dist/index.html
-          # Optionally, inject a console log into the built app's main JS file if needed for runtime debug
-          # This assumes your main JS is named 'index-<hash>.js' or similar and is in 'dist/assets/'
-          # Find the main JS file (e.g., starting with 'index-' and ending with '.js')
-          MAIN_JS_FILE=$(find dist/assets -name 'index-*.js' | head -n 1)
-          if [ -n "$MAIN_JS_FILE" ]; then
-            sed -i '1s/^/console.log("Workflow Engine Loaded: v2026.03.06-FINAL (Adv. Flow)");\n/' "$MAIN_JS_FILE"
-            echo "Injected debug console.log into $MAIN_JS_FILE"
-          else
-            echo "Warning: Could not find main JS file to inject console.log."
-          fi
-
       - name: Stage Backend Files to dist
-        env:
-          DB_HOST: ${{ secrets.DB_HOST }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          API_KEY: ${{ secrets.API_KEY }}
         run: |
           mkdir -p dist
-          # copy api folder if present
-          if [ -d api ]; then
-            cp -r api dist/
-          else
-            echo "No api directory to copy"
-          fi
+          if [ -d api ]; then cp -r api dist/; fi
+          if [ -f sync_db.php ]; then cp sync_db.php dist/; fi
 
-          # copy sync_db.php if present
-          if [ -f sync_db.php ]; then
-            cp sync_db.php dist/
-          else
-            echo "No sync_db.php to copy"
-          fi
+      - name: Debug Connection (Network Check)
+        run: |
+          echo "Testing connection to ${{ secrets.FTP_SERVER }}..."
+          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 21 || echo "Port 21 (FTP) is BLOCKED"
+          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 22 || echo "Port 22 (SFTP) is BLOCKED"
+          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 65002 || echo "Port 65002 (Hostinger Custom SSH) is BLOCKED"
 
-          echo "Backend staging complete (skipping local .env creation - using server-side config)"
-
-      - name: Deploy dist to Hostinger (SFTP)
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: Deploy dist to Hostinger (Standard FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          username: ${{ secrets.FTP_USERNAME }}
           server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: 22
-          local_path: './dist/*'
-          remote_path: './'
-          args: '-o ConnectTimeout=60'
+          local-dir: ./dist/
+          server-dir: ./
+          protocol: ftp
+          port: 21
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .env
