@@ -315,7 +315,9 @@ const AdminDashboard = () => {
         const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.email.toLowerCase().includes(searchTerm.toLowerCase());
         const matchesRole = roleFilter === 'all' || u.role === roleFilter;
-        const matchesGroup = selectedGroupId === 'all' || (selectedGroupId === 'none' ? !u.cluster_id : u.cluster_id == selectedGroupId);
+        const userClusterIds = u.cluster_ids ? u.cluster_ids.split(',').map(id => id.trim()) : [];
+        const matchesGroup = selectedGroupId === 'all' ||
+            (selectedGroupId === 'none' ? userClusterIds.length === 0 : userClusterIds.includes(selectedGroupId.toString()));
         return matchesSearch && matchesRole && matchesGroup;
     });
 
