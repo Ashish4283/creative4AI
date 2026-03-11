@@ -45,26 +45,26 @@ jobs:
           if [ -d api ]; then cp -r api dist/; fi
           if [ -f sync_db.php ]; then cp sync_db.php dist/; fi
 
-      - name: Deploy to Hostinger (Industrial LFTP)
+      - name: Check dist content
+        run: ls -R dist
+
+      - name: Deploy to Hostinger (Resilient LFTP)
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          # Install lftp
           sudo apt-get update && sudo apt-get install -y lftp
           
-          # Force a connection protocol that Hostinger shared hosting handles best:
-          # 1. Disable SSL-allow (avoids handshake timeout)
-          # 2. Force Passive Mode
-          # 3. Increase Timeout buffer
+          # Increased retries and timeouts for Hostinger shared hosting
           lftp -c "
             set ftp:ssl-allow no; 
             set ftp:passive-mode true; 
-            set net:timeout 20; 
-            set net:max-retries 2; 
+            set net:timeout 30; 
+            set net:max-retries 10; 
             set net:reconnect-interval-base 5;
+            set net:reconnect-interval-multiplier 2;
             open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; 
-            mirror -R -v ./dist ./; 
+            mirror -R -v --delete --ignore-time --parallel=2 ./dist ./; 
             quit
           "
