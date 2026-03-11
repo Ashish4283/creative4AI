@@ -63,10 +63,10 @@ try {
 
     $orgId = $invite['org_id'];
     $clusterId = $invite['cluster_id'];
+    $targetRole = $invite['target_role'] ?: 'agent';
 
     if ($invite['type'] === 'manager_invite') {
-        // Creator = User (the person wanting to be managed)
-        // Logged-in ($userId) = Manager/Admin
+        // Redundant / Legacy: Creator asks to be managed
         require_role($authPayload, ['admin', 'manager']);
         
         $userToAdopt = $invite['creator_id'];
@@ -83,15 +83,12 @@ try {
         }
 
     } else if ($invite['type'] === 'agent_invite' || $invite['type'] === 'org_invite') {
-        // Creator = Manager/Admin
-        // Logged-in ($userId) = The new user joining
-        
+        // Modern: Manager/Admin invites User
         $managerId = $invite['creator_id'];
-        $roleToSet = ($invite['type'] === 'agent_invite') ? 'agent' : 'tech_user';
-
+        
         // Update user: update manager_id, org_id, and role
         $updateStmt = $pdo->prepare("UPDATE users SET manager_id = ?, org_id = ?, role = ? WHERE id = ?");
-        $updateStmt->execute([$managerId, $orgId, $roleToSet, $userId]);
+        $updateStmt->execute([$managerId, $orgId, $targetRole, $userId]);
         
         // Auto-link to cluster if specified
         if ($clusterId) {

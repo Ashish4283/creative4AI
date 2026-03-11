@@ -242,18 +242,33 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 8. Invitation Links (Cluster/Org Aware)
     $pdo->exec("CREATE TABLE IF NOT EXISTS invitation_links (
         id INT AUTO_INCREMENT PRIMARY KEY,
         token VARCHAR(64) NOT NULL UNIQUE,
         type ENUM('manager_invite', 'agent_invite', 'org_invite') NOT NULL,
+        target_role ENUM('manager', 'tech_user', 'worker', 'agent') DEFAULT 'agent',
         creator_id INT NOT NULL,
         workflow_id INT DEFAULT NULL,
         cluster_id INT DEFAULT NULL,
         org_id INT DEFAULT NULL,
+        uses_count INT DEFAULT 0,
+        max_uses INT DEFAULT 100,
         expires_at TIMESTAMP NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
+    
+    // Self-healing: add columns if they don't exist
+    $invLinksCols = $pdo->query("SHOW COLUMNS FROM invitation_links")->fetchAll(PDO::FETCH_COLUMN);
+    $invColumnMap = [
+        'target_role' => "ENUM('manager', 'tech_user', 'worker', 'agent') DEFAULT 'agent'",
+        'uses_count' => "INT DEFAULT 0",
+        'max_uses' => "INT DEFAULT 100"
+    ];
+    foreach ($invColumnMap as $col => $def) {
+        if (!in_array($col, $invLinksCols)) {
+            $pdo->exec("ALTER TABLE invitation_links ADD COLUMN $col $def");
+        }
+    }
     
     $pdo->exec("CREATE TABLE IF NOT EXISTS tasks (
         id INT AUTO_INCREMENT PRIMARY KEY,

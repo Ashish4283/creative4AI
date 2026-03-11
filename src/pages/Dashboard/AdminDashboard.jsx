@@ -468,7 +468,7 @@ const AdminDashboard = () => {
 
                                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                                                 <span className="text-[10px] font-black opacity-40 mr-1">{group.user_count}</span>
-                                                {['super_admin', 'admin'].includes(user?.role) && (
+                                                {['super_admin', 'admin', 'manager'].includes(user?.role) && (
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <button className="text-slate-500 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10 outline-none"><MoreVertical className="w-3 h-3" /></button>
@@ -1233,7 +1233,10 @@ const AdminDashboard = () => {
                                                 <Shield className="w-3 h-3 text-primary" /> Target Permission Role
                                             </label>
                                             <div className="grid grid-cols-2 gap-3">
-                                                {['tech_user', 'worker', 'manager', 'agent'].map(r => (
+                                                {['tech_user', 'worker', 'manager', 'agent'].filter(r => {
+                                                    if (user?.role === 'manager' && r === 'manager') return false;
+                                                    return true;
+                                                }).map(r => (
                                                     <button
                                                         key={r}
                                                         onClick={() => setInviteRole(r)}
@@ -1242,7 +1245,7 @@ const AdminDashboard = () => {
                                                             inviteRole === r ? "bg-primary/10 border-primary text-primary shadow-lg shadow-primary/10" : "bg-white/5 border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10"
                                                         )}
                                                     >
-                                                        {r}
+                                                        {r.replace('_', ' ')}
                                                     </button>
                                                 ))}
                                             </div>

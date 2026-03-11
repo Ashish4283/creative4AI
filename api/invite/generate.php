@@ -16,32 +16,46 @@ $authPayload = authenticate_request();
 $userId = $authPayload['id'];
 
 try {
-    $rawInput = file_get_contents("php://input");
-    $data = json_decode($rawInput, true);
+    $type = isset($data['type']) ? $data['type'] : 'agent_invite';
+    $targetRole = ($type === 'manager_invite') ? 'manager' : 'agent';
+    
+    // Normalize type to agent_invite for internal logic if it's a "forward" invite
+    if ($type === 'manager_invite') $type = 'agent_invite';
 
-    $type = isset($data['type']) ? $data['type'] : 'manager_invite'; // 'manager_invite' or 'agent_invite'
     $workflowId = !empty($data['workflow_id']) ? (int)$data['workflow_id'] : null;
-    $clusterId = !empty($data['cluster_id']) ? (int)$data['cluster_id'] : null;
+    $clusterId = !empty($data['cluster_id']) && is_numeric($data['cluster_id']) ? (int)$data['cluster_id'] : null;
 
-    // Security check: Only managers/admins can create agent invites for specific workflows
-    if ($type === 'agent_invite') {
-        require_role($authPayload, ['admin', 'manager']);
-        if (!$workflowId && !$clusterId) {
-            http_response_code(400);
-            echo json_encode(["status" => "error", "message" => "Workflow ID or Cluster ID required for agent invites"]);
+    $orgId = $authPayload['org_id'] ?? null;
+    $role = $authPayload['role'];
+
+    // If cluster is provided, ensure we have the correct org_id (especially for Super Admins)
+    if ($clusterId) {
+        $cStmt = $pdo->prepare("SELECT org_id FROM clusters WHERE id = ?");
+        $cStmt->execute([$clusterId]);
+        $cluster = $cStmt->fetch();
+        if ($cluster) {
+            $orgId = $cluster['org_id'];
+        }
+    }
+
+    // Security & Role Validation
+    if ($role === 'manager') {
+        if ($targetRole === 'manager') {
+            http_response_code(403);
+            echo json_encode(["status" => "error", "message" => "Managers can only invite Agents/Workers"]);
             exit;
         }
     }
 
     // Generate unique token
     $token = bin2hex(random_bytes(16));
-    $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days')); // Links expire in 7 days
-    $orgId = $authPayload['org_id'] ?? null;
+    $expiresAt = date('Y-m-d H:i:s', strtotime('+7 days'));
 
-    $stmt = $pdo->prepare("INSERT INTO invitation_links (token, type, creator_id, workflow_id, cluster_id, org_id, expires_at) VALUES (:token, :type, :creator_id, :workflow_id, :cluster_id, :org_id, :expires_at)");
+    $stmt = $pdo->prepare("INSERT INTO invitation_links (token, type, target_role, creator_id, workflow_id, cluster_id, org_id, expires_at) VALUES (:token, :type, :target_role, :creator_id, :workflow_id, :cluster_id, :org_id, :expires_at)");
     $stmt->execute([
         ':token' => $token,
         ':type' => $type,
+        ':target_role' => $targetRole,
         ':creator_id' => $userId,
         ':workflow_id' => $workflowId,
         ':cluster_id' => $clusterId,

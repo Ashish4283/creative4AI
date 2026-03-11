@@ -88,9 +88,12 @@ const TeamHQ = () => {
 
     const handleCreateInvite = async (type) => {
         try {
-            const res = await generateInvite(type, null, selectedClusterId);
+            // If cluster is 'all' or 'none', we pass null to avoid casting errors in PHP
+            const clusterId = (selectedClusterId === 'all' || selectedClusterId === 'none') ? null : selectedClusterId;
+
+            const res = await generateInvite(type, null, clusterId);
             if (res.status === 'success' || res.data) {
-                const token = res.token || res.data.token;
+                const token = res.token || (res.data && res.data.token);
                 setInviteLink(`${window.location.origin}/invite?token=${token}`);
                 toast({ title: "Portal Opened", description: "Strategic invitation link synchronized." });
             }
@@ -217,23 +220,32 @@ const TeamHQ = () => {
                             </div>
 
                             <div className="grid grid-cols-1 gap-3 pt-2">
-                                <Button
-                                    onClick={() => handleCreateInvite('manager_invite')}
-                                    className="w-full justify-between h-14 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl px-6 group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Shield className="w-5 h-5 text-amber-400" />
-                                        <span className="font-bold">Invite Lead</span>
-                                    </div>
-                                    <Send className="w-4 h-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
-                                </Button>
+                                {(user?.role === 'super_admin' || user?.role === 'admin') && (
+                                    <Button
+                                        onClick={() => handleCreateInvite('manager_invite')}
+                                        className="w-full justify-between h-14 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl px-6 group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Shield className="w-5 h-5 text-amber-400" />
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-bold">Invite Manager</span>
+                                                <span className="text-[8px] text-slate-500 uppercase">Operational Lead</span>
+                                            </div>
+                                        </div>
+                                        <Send className="w-4 h-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                )}
+
                                 <Button
                                     onClick={() => handleCreateInvite('agent_invite')}
                                     className="w-full justify-between h-14 bg-primary hover:bg-primary/90 text-white rounded-2xl px-6 group shadow-lg shadow-primary/20"
                                 >
                                     <div className="flex items-center gap-3">
                                         <UserPlus className="w-5 h-5" />
-                                        <span className="font-bold">Invite Agent</span>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-bold">Invite Agent</span>
+                                            <span className="text-[8px] text-white/50 uppercase">Reasoning Workforce</span>
+                                        </div>
                                     </div>
                                     <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                                 </Button>

@@ -92,8 +92,8 @@ const InvitePage = () => {
                         <div className="w-20 h-20 bg-indigo-500/10 text-indigo-500 rounded-3xl flex items-center justify-center mx-auto mb-6 text-3xl">🤝</div>
                         <h1 className="text-2xl font-bold mb-2">You're Invited!</h1>
                         <p className="text-zinc-400 mb-8">
-                            {inviteData?.creator_name} has invited you to join their
-                            {inviteData?.type === 'manager_invite' ? ' team as a Managed User' : ' workflow as an Agent'}.
+                            {inviteData?.creator_name} has invited you to join their operational network as a
+                            <span className="text-white font-bold"> {inviteData?.type === 'manager_invite' || inviteData?.target_role === 'manager' ? 'Mission Lead' : 'Rational Agent'}</span>.
                         </p>
 
                         <button
