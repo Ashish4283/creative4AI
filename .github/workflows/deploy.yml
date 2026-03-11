@@ -45,24 +45,26 @@ jobs:
           if [ -d api ]; then cp -r api dist/; fi
           if [ -f sync_db.php ]; then cp sync_db.php dist/; fi
 
-      - name: Debug Connection (Network Check)
+      - name: Deploy to Hostinger (Industrial LFTP)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          echo "Testing connection to ${{ secrets.FTP_SERVER }}..."
-          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 21 || echo "Port 21 (FTP) is BLOCKED"
-          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 22 || echo "Port 22 (SFTP) is BLOCKED"
-          nc -zv -w 5 ${{ secrets.FTP_SERVER }} 65002 || echo "Port 65002 (Hostinger Custom SSH) is BLOCKED"
-
-      - name: Deploy dist to Hostinger (Standard FTP)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-          server-dir: ./
-          protocol: ftp
-          port: 21
-          exclude: |
-            **/.git*
-            **/.git*/**
-            .env
+          # Install lftp
+          sudo apt-get update && sudo apt-get install -y lftp
+          
+          # Force a connection protocol that Hostinger shared hosting handles best:
+          # 1. Disable SSL-allow (avoids handshake timeout)
+          # 2. Force Passive Mode
+          # 3. Increase Timeout buffer
+          lftp -c "
+            set ftp:ssl-allow no; 
+            set ftp:passive-mode true; 
+            set net:timeout 20; 
+            set net:max-retries 2; 
+            set net:reconnect-interval-base 5;
+            open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER; 
+            mirror -R -v ./dist ./; 
+            quit
+          "
