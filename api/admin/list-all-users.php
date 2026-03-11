@@ -23,7 +23,17 @@ $payload = authenticate_request();
                 u.trial_ends_at, 
                 u.manager_id,
                 u.org_id,
-                o.name as org_name,
+                CASE 
+                    WHEN u.role = 'super_admin' THEN 'Super Admin'
+                    WHEN o.name IS NOT NULL THEN o.name
+                    ELSE (
+                        SELECT GROUP_CONCAT(DISTINCT org.name SEPARATOR ', ') 
+                        FROM cluster_members cm 
+                        JOIN clusters c ON cm.cluster_id = c.id 
+                        JOIN organizations org ON c.org_id = org.id 
+                        WHERE cm.user_id = u.id
+                    )
+                END as org_name,
                 m.name as manager_name,
                 (SELECT COUNT(*) FROM workflows WHERE user_id = u.id) as workflow_count,
                 (SELECT GROUP_CONCAT(c.name SEPARATOR ', ') FROM cluster_members cm JOIN clusters c ON cm.cluster_id = c.id WHERE cm.user_id = u.id) as cluster_name,
